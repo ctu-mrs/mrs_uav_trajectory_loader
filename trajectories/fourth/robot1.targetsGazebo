@@ -1,0 +1,32 @@
+    <include>
+      <uri>model://red_object</uri>
+      <pose>33 -47 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>41.5 -51.5 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>31 -57 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>31 -57 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>20.5 -60.5 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>16 -67 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>16.5 -78 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>1.5 -76.5 0 0 0 0</pose>
+    </include>

@@ -1,0 +1,92 @@
+    <include>
+      <uri>model://red_object</uri>
+      <pose>28.92 -42.83 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>35.37 -12.06 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>23.08 -22.62 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>15.11 -58.3 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>37.03 -29.04 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>49.46 -26.53 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>43.81 -98.27 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>35.04 -34.39 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>54.38 -10.78 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>49.07 -87.97 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>35.66 -26.07 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>25.52 -2.25 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>9.69 -31.27 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>25.37 -17.88 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>35.91 -9.42 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>41.76 -47.09 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>38.31 -69.99 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>4.13 -3.36 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>31.85 -31.96 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>24.46 -65.44 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>43.1 -82 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>31.88 -96.86 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://red_object</uri>
+      <pose>6.34 -32.51 0 0 0 0</pose>
+    </include>
