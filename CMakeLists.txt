@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
+set(CMAKE_CXX_FLAGS "-std=c++11 -fno-diagnostics-color")
+
 # find_package(Boost REQUIRED COMPONENTS system)
 
 ################################################
