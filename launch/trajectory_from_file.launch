@@ -8,7 +8,7 @@
 		<arg name="use_yaw" default="true"/>
 		<arg name="fly_now" default="false"/>
 		
-		<node name="trajectory_loader" pkg="trajectory_handler" type="load_trajectory" output="screen" >
+		<node name="trajectory_loader" pkg="trajectory_handler" type="load_trajectory" output="screen" cwd="ROS_HOME">
   	
 			<remap from="~trajectory_topic" to="trackers_manager/mpc_tracker/set_trajectory" />
 

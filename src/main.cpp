@@ -5,6 +5,7 @@
 #include <mrs_msgs/TrackerTrajectorySrv.h>
 #include <iostream>
 #include <fstream>
+#include "boost/filesystem.hpp"
 
 /**
  * @brief The TrajectoryLoader class
@@ -92,7 +93,9 @@ void TrajectoryLoader::publishTrajectory() {
  * @brief TrajectoryLoader::loadTrajectoryFromFile
  */
 void TrajectoryLoader::loadTrajectoryFromFile(){
-
+  ROS_INFO("Want to load from file: %s", filename_.c_str());
+  boost::filesystem::path abs_path_filename = boost::filesystem::complete(filename_);
+  ROS_INFO("absolute path: %s", abs_path_filename.c_str());
   std::ifstream in(filename_.c_str(), std::ifstream::in);
 
   if (!in) {
