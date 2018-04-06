@@ -1,0 +1,28 @@
+<launch>
+ 	
+ 	<arg name="uav_name" default="$(optenv UAV_NAME uav)"/>
+  <arg name="file"/>
+
+	<group ns="$(arg uav_name)">
+					
+		<arg name="use_yaw" default="true"/>
+		<arg name="fly_now" default="false"/>
+		
+		<node name="trajectory_loader" pkg="trajectory_handler" type="load_trajectory" output="screen" cwd="ROS_HOME">
+  	
+			<remap from="~trajectory_topic" to="trackers_manager/mpc_tracker/set_trajectory" />
+
+			<param name="filename" type="string" value="$(arg file)" />
+
+			<param name="use_yaw" type="bool" value="$(arg use_yaw)" />
+			<param name="fly_now" type="bool" value="$(arg fly_now)" />
+			
+			<rosparam file="$(find trajectory_handler)/config/params.yaml" />
+			
+			<param name="sleep_time" type="double" value="1" />
+  		
+		</node>
+
+	</group>
+
+</launch>
