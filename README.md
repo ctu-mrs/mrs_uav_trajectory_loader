@@ -1,6 +1,6 @@
 # Tutorial for trajectory_loader of MRS ROS system
 
-Launchfiles and config files are only examples how to use this package. It is recommended to copy launchfiles and config file into your own package and modify them there.
+Launchfiles and config files are only examples how to use this package. It is recommended to copy them into your own package and modify them there.
 
 ## Commanding single client machines
 
@@ -10,7 +10,7 @@ Loading is done by calling:
 ```bash
 roslaunch trajectory_handler single_trajectory_from_file.launch current_working_directory:=<folder> file:=<file>
 ```
-where parameters *<folder>* and *<file>* are parameters that have to be set. Furthermore, another parameters of the trajectory can be set by modifying the launch file:
+where parameters <folder> and <file> are parameters that have to be set. Furthermore, another parameters of the trajectory can be set by modifying the launch file:
 * offset - offset for the whole trajectory [x,y,z,yaw].
 * delay - sleep before loading the trajectory.
 * use_yaw - set if the yaw controller should follow the predefined yaw angle in the trajectory.
