@@ -1,2 +1,15 @@
-min_altitude: 1.3
-max_altitude: 20.0
+main:
+  uav_name_list: [uav1, uav2, uav3]
+  offset: [0.0, 0.0, 0.0, 0.0] # offset for all trajectories [x,y,z,yaw]
+  delay: [0.0, 0.0, 0.0] #  in seconds
+
+timeout_for_calling_services: 3
+
+uav1:
+  filename: /../../trajectories/trajectories_no1/uav1.txt
+
+uav2:
+  filename: /../../trajectories/trajectories_no1/uav2.txt
+
+uav3:
+  filename: /../../trajectories/trajectories_no1/uav3.txt
