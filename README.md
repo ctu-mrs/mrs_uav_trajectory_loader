@@ -21,8 +21,8 @@ where parameters <folder> and <file> are parameters that have to be set. Further
 
 ### Prerequisites 
 
-Setting which UAVs are target and also which trajectories should be loaded is set in config file */config/params.yaml*.
-All launch files are using parameter *uav_name_list*, that should be array of target UAVS.
+Setting which UAVs are targets and also which trajectories should be loaded is defined in config file */config/params.yaml*.
+Parameter *uav_name_list* is array of target UAVS (for example - [uav1, uav2, uav3]).
 
 ### For simulations via LAN
 Follow to [how to set ros remote](https://mrs.felk.cvut.cz/gitlab/uav/uav_core/wikis/ros_remote) page.
