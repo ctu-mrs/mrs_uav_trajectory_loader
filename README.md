@@ -10,7 +10,7 @@ Loading is done by calling:
 ```bash
 roslaunch trajectory_handler single_trajectory_from_file.launch current_working_directory:=<folder> file:=<file>
 ```
-where parameters <folder> and <file> are parameters that have to be set. Furthermore, another parameters of the trajectory can be set by modifying the launch file:
+where parameters *\<folder\>* and *\<file\>* are parameters that have to be set. Furthermore, another parameters of the trajectory can be set by modifying the launch file:
 * offset - offset for the whole trajectory [x,y,z,yaw].
 * delay - sleep before loading the trajectory.
 * use_yaw - set if the yaw controller should follow the predefined yaw angle in the trajectory.
@@ -22,7 +22,7 @@ where parameters <folder> and <file> are parameters that have to be set. Further
 ### Prerequisites 
 
 Setting which UAVs are targets and also which trajectories should be loaded is defined in config file */config/params.yaml*.
-Parameter *uav_name_list* is array of target UAVS (for example - [uav1, uav2, uav3]).
+Parameter *uav_name_list* is array of target UAVs (for example - [uav1, uav2, uav3]).
 
 ### For simulations via LAN
 Follow to [how to set ros remote](https://mrs.felk.cvut.cz/gitlab/uav/uav_core/wikis/ros_remote) page.
