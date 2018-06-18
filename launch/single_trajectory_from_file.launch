@@ -1,0 +1,36 @@
+<launch>
+
+  <arg name="uav_name" default="$(optenv UAV_NAME uav)"/>
+  <arg name="file"/>
+  <arg name="current_working_directory"/>
+  <arg name="use_yaw" default="true"/>
+  <arg name="fly_now" default="false"/>
+  <arg name="loop" default="false"/>
+
+  <group ns="$(arg uav_name)">
+
+    <node name="trajectory_loader" pkg="trajectory_handler" type="load_trajectory" args="--load" output="screen" cwd="ROS_HOME">
+
+      <param name="service_topic" type="string" value="trackers_manager/mpc_tracker/set_trajectory" />	
+
+			<param name="current_working_directory" type="string" value="$(arg current_working_directory)" />	
+      <param name="filename" type="string" value="$(arg file)" />	
+      
+      <param name="use_yaw" type="bool" value="$(arg use_yaw)" />
+      <param name="fly_now" type="bool" value="$(arg fly_now)" />
+      <param name="loop" type="bool" value="$(arg loop)" />
+      <param name="uav_name" type="string" value="$(arg uav_name)" />
+      <param name="timeout_for_calling_services" type="double" value="3" />
+
+      <rosparam param="main/uav_name_list"> []</rosparam> # single uav 
+      <rosparam>
+        main:
+          offset: [0.0, 0.0, 0.0, 0.0] # offset for all trajectories [x,y,z,yaw]
+          delay: [0.0] #  delay before calling the service in seconds
+      </rosparam>
+
+    </node>
+
+  </group>
+
+</launch>
