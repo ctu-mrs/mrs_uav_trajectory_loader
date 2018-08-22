@@ -12,7 +12,7 @@
       <rosparam file="$(find trajectory_handler)/config/params.yaml" />
 
 			<param name="current_working_directory" type="string" value="$(find uavproject-template)" />	
-			<param name="service_topic" type="string" value="trackers_manager/mpc_tracker/set_trajectory" />	
+			<param name="service_topic" type="string" value="control_manager/mpc_tracker/set_trajectory" />	
       
       <param name="use_yaw" type="bool" value="$(arg use_yaw)" />
       <param name="fly_now" type="bool" value="$(arg fly_now)" />

@@ -7,7 +7,7 @@
     <node name="trajectory_loader" pkg="trajectory_handler" type="load_trajectory" args="--call-trigger-service" output="screen" >
 
       <rosparam file="$(find trajectory_handler)/config/params.yaml" />
-			<param name="service_topic" type="string" value="trackers_manager/mpc_tracker/start_trajectory_following" />	
+      <param name="service_topic" type="string" value="control_manager/mpc_tracker/start_trajectory_following" />
 
     </node>
 

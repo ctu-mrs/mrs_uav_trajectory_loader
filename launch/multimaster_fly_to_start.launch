@@ -1,16 +1,16 @@
 <launch>
- 	
-	<arg name="uav_name" default="$(optenv UAV_NAME uav)"/>
 
-	<group ns="$(arg uav_name)">
-	
-		<node name="trajectory_loader" pkg="trajectory_handler" type="load_trajectory" args="--call-trigger-service" output="screen" >
-    
+  <arg name="uav_name" default="$(optenv UAV_NAME uav)"/>
+
+  <group ns="$(arg uav_name)">
+
+    <node name="trajectory_loader" pkg="trajectory_handler" type="load_trajectory" args="--call-trigger-service" output="screen" >
+
       <rosparam file="$(find trajectory_handler)/config/params.yaml" />
-			<param name="service_topic" type="string" value="trackers_manager/mpc_tracker/fly_to_trajectory_start" />	
-   
+      <param name="service_topic" type="string" value="control_manager/mpc_tracker/fly_to_trajectory_start" />
+
     </node>
 
-	</group>
+  </group>
 
 </launch>
