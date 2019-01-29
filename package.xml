@@ -1,14 +1,13 @@
 <?xml version="1.0"?>
 <package>
-  <name>trajectory_handler</name>
+  <name>trajectory_loader</name>
   <version>0.0.0</version>
   <description>The trajectory_handler package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="vojta@todo.todo">vojta</maintainer>
-
+  <maintainer email="vojtech.spurny@fel.cvut.cz">Vojta Spurny</maintainer>
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
@@ -20,7 +19,6 @@
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <run_depend>roscpp</run_depend>
-
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

@@ -7,9 +7,9 @@
 
 	<group ns="$(arg uav_name)">
 	
-		<node name="trajectory_loader" pkg="trajectory_handler" type="load_trajectory" args="--load" output="screen" >
+		<node name="trajectory_loader" pkg="trajectory_loader" type="load_trajectory" args="--load" output="screen" >
     
-      <rosparam file="$(find trajectory_handler)/config/params.yaml" />
+      <rosparam file="$(find trajectory_loader)/config/params.yaml" />
 
 			<param name="current_working_directory" type="string" value="$(find uavproject-template)" />	
 			<param name="service_topic" type="string" value="control_manager/mpc_tracker/set_trajectory" />	

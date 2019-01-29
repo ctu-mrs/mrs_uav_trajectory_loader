@@ -9,7 +9,7 @@
 
   <group ns="$(arg uav_name)">
 
-    <node name="trajectory_loader" pkg="trajectory_handler" type="load_trajectory" args="--load" output="screen" cwd="ROS_HOME">
+    <node name="trajectory_loader" pkg="trajectory_loader" type="load_trajectory" args="--load" output="screen" cwd="ROS_HOME">
 
       <param name="service_topic" type="string" value="control_manager/mpc_tracker/set_trajectory" />
 

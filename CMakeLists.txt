@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(trajectory_handler)
+project(trajectory_loader)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -62,7 +62,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11 -fno-diagnostics-color")
 
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES trajectory_handler
+#  LIBRARIES trajectory_loader
 #  CATKIN_DEPENDS mrs_msgs/ roscpp
 #  DEPENDS system_lib
 )
