@@ -6,10 +6,10 @@ main:
 timeout_for_calling_services: 3
 
 uav1:
-  filename: /../../trajectories/trajectories_no1/uav1.txt
+  filename: /sample_trajectory/trajectory1.txt
 
 uav2:
-  filename: /../../trajectories/trajectories_no1/uav2.txt
+  filename: /sample_trajectory/trajectory2.txt
 
 uav3:
-  filename: /../../trajectories/trajectories_no1/uav3.txt
+  filename: /sample_trajectory/trajectory3.txt
