@@ -20,6 +20,7 @@ TrajectoryLoader::TrajectoryLoader() {
   _service_topic_ = _nh_.param("service_topic", string(""));
   if (_service_topic_.empty()) {
     ROS_ERROR("Parameter service_topic is not set!");
+    ros::shutdown();
     return;
   }
 
@@ -28,6 +29,7 @@ TrajectoryLoader::TrajectoryLoader() {
   if (_uav_name_list_.empty()) {
     if (_uav_name_.empty()) {
       ROS_ERROR("uav_name_list (target UAVs) is empty!");
+      ros::shutdown();
       return;
     } else {
       ROS_INFO("uav_name_list (target UAVs) is empty -> setting the list to: [%s]", _uav_name_.c_str());
@@ -38,6 +40,7 @@ TrajectoryLoader::TrajectoryLoader() {
   _nh_.getParam("main/delay", _delay_list_);
   if (_delay_list_.size() != _uav_name_list_.size()) {
     ROS_ERROR("delay_list (parameter main/delay) should have the same size as uav_name_list!");
+    ros::shutdown();
     return;
   }
 
@@ -47,6 +50,7 @@ TrajectoryLoader::TrajectoryLoader() {
     delay_sum += _delay_list_.at(i);
     if (_delay_list_.at(i) < 0) {
       ROS_ERROR("delay has to be positive value!");
+      ros::shutdown();
       return;
     }
   }
@@ -68,6 +72,7 @@ TrajectoryLoader::TrajectoryLoader() {
   _timeout_for_calling_services_ = _nh_.param("timeout_for_calling_services", double(5));
   if (_timeout_for_calling_services_ < 0) {
     ROS_ERROR("Parameter timeout_for_calling_services has to be positive value!");
+    ros::shutdown();
     return;
   }
 }
@@ -78,10 +83,11 @@ TrajectoryLoader::TrajectoryLoader() {
 
 // method for loading trajectories from file into mrs_msgs/TrackerTrajectory msg
 void TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::TrackerTrajectory &trajectory) {
-  std::ifstream in(filename.c_str(), std::ifstream::in);
+  std::ifstream file_in(filename.c_str(), std::ifstream::in);
 
-  if (!in) {
+  if (!file_in) {
     ROS_ERROR("- Cannot open %s", filename.c_str());
+    ros::shutdown();
     return;
 
   } else {
@@ -94,7 +100,7 @@ void TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
     std::vector<string>         parts;
 
     /* for each line in file */
-    while (getline(in, line)) {
+    while (getline(file_in, line)) {
       // replace comma with space
       boost::replace_all(line, ",", " ");
       // if now line contains two space replace them with one space
@@ -104,6 +110,7 @@ void TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
 
       if (parts.size() != 4) {
         ROS_ERROR("- Incorrect format of the trajectory on line %d", int(new_traj.points.size() + 1));
+        ros::shutdown();
         return;
       }
 
@@ -115,6 +122,7 @@ void TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
       }
       catch (...) {
         ROS_ERROR("- Some error occured during reading line %d", int(new_traj.points.size() + 1));
+        ros::shutdown();
         return;
       }
 
@@ -125,7 +133,7 @@ void TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
 
       new_traj.points.push_back(point);
     }
-    in.close();
+    file_in.close();
 
     new_traj.header.stamp = ros::Time::now();
     new_traj.use_yaw      = _use_yaw_;
@@ -152,6 +160,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   _nh_.getParam("main/offset", _offset_list_);
   if (_offset_list_.size() != 4) {
     ROS_ERROR("Parameter offset should be set to [x,y,z,yaw]!");
+    ros::shutdown();
     return;
   }
 
@@ -163,6 +172,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   _current_working_directory_ = _nh_.param("current_working_directory", string(""));
   if (_current_working_directory_.empty()) {
     ROS_ERROR("Parameter current_working_directory is not set!");
+    ros::shutdown();
     return;
   }
 
@@ -174,6 +184,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
       string filename = _nh_.param(text.c_str(), string(""));
       if (filename.empty()) {
         ROS_ERROR("Parameter %s is not set in config file!!", text.c_str());
+        ros::shutdown();
         return;
       }
 
@@ -183,6 +194,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
     text = _nh_.param("filename", string(""));
     if (text.empty()) {
       ROS_ERROR("Parameter filename is not set in config file!!");
+      ros::shutdown();
       return;
     }
     filename_array[0] = _current_working_directory_ + text;
