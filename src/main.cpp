@@ -6,6 +6,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/program_options.hpp>
+
 #include <fstream>
 #include <iostream>
 
@@ -15,6 +17,7 @@
 
 using boost::lexical_cast;
 using std::string;
+namespace po = boost::program_options;
 
 
 class TrajectoryLoader {
@@ -87,7 +90,7 @@ TrajectoryLoader::TrajectoryLoader() {
 
   // check if the delays are positive values and if some delays are set
   double delay_sum = 0;
-  for (int i = 0; i < delay_list_.size(); i++) {
+  for (unsigned long i = 0; i < delay_list_.size(); i++) {
     delay_sum += delay_list_.at(i);
     if (delay_list_.at(i) < 0) {
       ROS_ERROR("delay has to be positive value!");
@@ -99,7 +102,7 @@ TrajectoryLoader::TrajectoryLoader() {
   char buff[100];
   if (delay_sum > 1e-5) {
     string delay_text = "Delays are set to: [ ";
-    for (int i = 0; i < delay_list_.size(); i++) {
+    for (unsigned long i = 0; i < delay_list_.size(); i++) {
       snprintf(buff, sizeof(buff), "%s: %.1f", uav_name_list_[i].c_str(), delay_list_[i]);
       delay_text += buff;
       if (i != delay_list_.size() - 1) {
@@ -212,7 +215,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   string text;
   string filename_array[uav_name_list_.size()];
   if (uav_name_list_.size() != 1 && uav_name_ != uav_name_list_[0]) {
-    for (int i = 0; i < uav_name_list_.size(); ++i) {
+    for (unsigned long i = 0; i < uav_name_list_.size(); ++i) {
       text            = uav_name_list_[i] + "/filename";
       string filename = nh_.param(text.c_str(), string(""));
       if (filename.empty()) {
@@ -235,7 +238,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
 
   /* load trajectories */
   ROS_INFO("Loading trajectories from files:");
-  for (int i = 0; i < uav_name_list_.size(); ++i) {
+  for (unsigned long i = 0; i < uav_name_list_.size(); ++i) {
     mrs_msgs::TrackerTrajectory msg;
     loadTrajectoryFromFile(filename_array[i], msg);
     trajectories_list_.push_back(msg);
@@ -246,7 +249,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   /* create services */
   string             topic;
   ros::ServiceClient sc;
-  for (int i = 0; i < uav_name_list_.size(); ++i) {
+  for (unsigned long i = 0; i < uav_name_list_.size(); ++i) {
     topic = "/" + uav_name_list_[i] + "/" + service_topic_;
     sc    = nh_.serviceClient<mrs_msgs::TrackerTrajectorySrv>(topic.c_str());
     service_client_list_.push_back(sc);
@@ -254,7 +257,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   }
 
   /* call services */
-  for (int i = 0; i < uav_name_list_.size(); ++i) {
+  for (unsigned long i = 0; i < uav_name_list_.size(); ++i) {
     boost::thread *t = new boost::thread(&TrajectoryLoader::publishTrajectory, this, i);
     thread_group.add_thread(t);
   }
@@ -271,7 +274,7 @@ void TrajectoryLoader::callMultipleServiceTriggers() {
   /* create services */
   string             topic;
   ros::ServiceClient sc;
-  for (int i = 0; i < uav_name_list_.size(); ++i) {
+  for (unsigned long i = 0; i < uav_name_list_.size(); ++i) {
     topic = "/" + uav_name_list_[i] + "/" + service_topic_;
     sc    = nh_.serviceClient<std_srvs::Trigger>(topic.c_str());
     service_client_list_.push_back(sc);
@@ -279,15 +282,13 @@ void TrajectoryLoader::callMultipleServiceTriggers() {
   }
 
   /* call services */
-  for (int i = 0; i < uav_name_list_.size(); ++i) {
+  for (unsigned long i = 0; i < uav_name_list_.size(); ++i) {
     boost::thread *t = new boost::thread(&TrajectoryLoader::callServiceTrigger, this, i);
     thread_group.add_thread(t);
   }
 
   /* timeout for threads */
   timeoutFunction();
-
-  thread_group.interrupt_all();
   ros::shutdown();
 }
 
@@ -303,7 +304,7 @@ void TrajectoryLoader::timeoutFunction() {
     ros::Duration(timestep).sleep();
     current_timeout += timestep;
     bool total_result = true;
-    for (int i = 0; i < uav_name_list_.size(); ++i) {
+    for (unsigned long i = 0; i < uav_name_list_.size(); ++i) {
       total_result &= result_info_list_.at(i);
     }
     if (total_result) {
@@ -314,7 +315,7 @@ void TrajectoryLoader::timeoutFunction() {
 
   if (current_timeout >= timeout) {
     ROS_ERROR("Main thread: Timeout reached --> terminating all remaining threads");
-    for (int i = 0; i < uav_name_list_.size(); ++i) {
+    for (unsigned long i = 0; i < uav_name_list_.size(); ++i) {
       if (!result_info_list_.at(i)) {
         ROS_ERROR("%s: Deadlock during calling", uav_name_list_.at(i).c_str());
       }
@@ -380,44 +381,76 @@ void TrajectoryLoader::callServiceTrigger(const int index) {
   result_info_list_.at(index) = true;
 }
 
-// help function
-void help() {
-  ROS_INFO_STREAM("Usage: \n"
-                  << "\t --load - for loading trajectories \n "
-                  << "\t --fly_to_start - for flying to the start position \n "
-                  << "\t --start - for starting following loaded trajectories");
+
+/* Auxiliary function for checking input for validity.//{ */
+
+/* Function used to check that 'opt1' and 'opt2' are not specified at the same time. */
+bool conflicting_options(const po::variables_map &vm, const char *opt1, const char *opt2) {
+  if (vm.count(opt1) && !vm[opt1].defaulted() && vm.count(opt2) && !vm[opt2].defaulted()) {
+    return true;
+  }
+  return false;
 }
 
-// main function
+//}
+
+/* MAIN FUNCTION //{ */
 int main(int argc, char **argv) {
+  /* Loading arguments //{ */
+
+  po::options_description desc("Allowed options");
+  // Declare the supported options.
+  desc.add_options()("help", "produce help message")("load", "set flag for loading trajectories")("call-trigger-service",
+                                                                                                  "set flag for calling trigger service");
+  po::variables_map vm;
+  try {
+    po::store(po::parse_command_line(argc, argv, desc, po::command_line_style::unix_style), vm);
+    po::notify(vm);
+  }
+  catch (std::exception &e) {
+    std::cerr << e.what() << "\n";
+    std::cout << desc << "\n";
+    return 1;
+  }
+
+  // Call help() if it is specified or when the number of the arguments is less then one
+  if (vm.count("help") || vm.size() == 0) {
+    std::cout << desc << "\n";
+    return 1;
+  }
+
+  // check if both arguments are not set
+  if (conflicting_options(vm, "load", "call-trigger-service")){
+    std::cerr << "Conflicting options 'load' and 'call-trigger-service'. Only one of them can be set." << "\n";
+    return 1;
+  }
+
+  //}
+
+  // initialize ROS
   ros::init(argc, argv, "trajectory_loader");
   ROS_INFO("Node initialized.");
-  TrajectoryLoader tl;
 
-  // Check the number of parameters
-  if (argc < 1) {
-    help();
-    ros::shutdown();
-    return 0;
+  // create class TrajectoryLoader
+  TrajectoryLoader trajectory_loader;
 
+  // compare argument if it is equal to "--load"
+  if (vm.count("load")) {
+
+    ROS_INFO("LOADING ....");
+    trajectory_loader.loadMultipleTrajectories();
+
+    // or "--call-trigger-service"
+  } else if (vm.count("call-trigger-service")) {
+
+    ROS_INFO("CALLING TRIGGER SERVICE ....");
+    trajectory_loader.callMultipleServiceTriggers();
+
+    // otherwise call help()
   } else {
-
-    string arg(argv[1]);
-
-    if (strcmp(arg.c_str(), "--load") == 0) {
-      ROS_INFO("LOADING ....");
-      tl.loadMultipleTrajectories();
-
-    } else if (strcmp(arg.c_str(), "--call-trigger-service") == 0) {
-      ROS_INFO("CALLING TRIGGER SERVICE ...");
-      tl.callMultipleServiceTriggers();
-
-    } else {
-
-      help();
-      ros::shutdown();
-      return 1;
-    }
+    std::cout << desc << "\n";
+    return 1;
   }
-  return 0;
 };
+
+//}

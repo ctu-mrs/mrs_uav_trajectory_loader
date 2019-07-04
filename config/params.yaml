@@ -1,9 +1,9 @@
 main:
   uav_name_list: [uav1, uav2, uav3]
-  offset: [0.0, 0.0, 0.0, 0.0] # offset for all trajectories [x,y,z,yaw]
-  delay: [0.0, 0.0, 0.0] #  in seconds
+  offset: [0.0, 0.0, 0.0, 0.0]      # offset for all trajectories [x,y,z,yaw]
+  delay: [0.0, 0.0, 0.0]            # delays before calling the service (in seconds)
 
-timeout_for_calling_services: 3
+timeout_for_calling_services: 3     # maximal waiting time for response after calling service
 
 uav1:
   filename: /sample_trajectory/trajectory1.txt
