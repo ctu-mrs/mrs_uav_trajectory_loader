@@ -35,7 +35,7 @@ private:
   void timeoutFunction();
 
   /* threads for asynchronous calling */
-  boost::thread_group thread_group;
+  std::vector<boost::shared_ptr<boost::thread>> thread_list_;
 
 public:
   TrajectoryLoader();

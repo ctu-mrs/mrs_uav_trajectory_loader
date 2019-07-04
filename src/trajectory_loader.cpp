@@ -10,6 +10,9 @@
 #include <boost/chrono/chrono_io.hpp>
 
 #include <mrs_lib/ParamLoader.h>
+
+// only for UNIX
+#include <pthread.h>
 //}
 
 using boost::lexical_cast;
@@ -235,14 +238,12 @@ void TrajectoryLoader::loadMultipleTrajectories() {
 
   /* call services using individual threads */
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-    boost::thread *t = new boost::thread(&TrajectoryLoader::publishTrajectory, this, i);
-    thread_group.add_thread(t);
+    boost::shared_ptr<boost::thread> t = boost::make_shared<boost::thread>(&TrajectoryLoader::publishTrajectory, this, i);
+    thread_list_.push_back(t);
   }
 
   /* timeout for threads */
   timeoutFunction();
-
-  thread_group.interrupt_all();
 }
 
 //}
@@ -264,8 +265,8 @@ void TrajectoryLoader::callMultipleServiceTriggers() {
 
   /* call services */
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-    boost::thread *t = new boost::thread(&TrajectoryLoader::callServiceTrigger, this, i);
-    thread_group.add_thread(t);
+    boost::shared_ptr<boost::thread> t = boost::make_shared<boost::thread>(&TrajectoryLoader::callServiceTrigger, this, i);
+    thread_list_.push_back(t);
   }
 
   /* timeout for threads */
@@ -301,7 +302,8 @@ void TrajectoryLoader::timeoutFunction() {
     ROS_ERROR("Main thread: Timeout reached --> terminating all remaining threads");
     for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
       if (!result_info_list_.at(i)) {
-        ROS_ERROR("%s: Deadlock during calling", _uav_name_list_.at(i).c_str());
+        ROS_ERROR("%s: Deadlock during calling. Shutting down the thread.", _uav_name_list_.at(i).c_str());
+        pthread_cancel(thread_list_.at(i)->native_handle());
       }
     }
   }
