@@ -2,8 +2,8 @@
 Changelog for package trajectory_loader
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.1 (2019-07-04)
+------------------
 * added sample trajectories and fixed the main launch file
 * updated package.xml to v2
 * fixed flags...
