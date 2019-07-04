@@ -29,7 +29,7 @@ private:
   std::vector<ros::ServiceClient>          _service_client_list_;
 
   /* functions definition */
-  void loadTrajectoryFromFile(const std::string &filename, mrs_msgs::TrackerTrajectory &trajectory);
+  bool loadTrajectoryFromFile(const std::string &filename, mrs_msgs::TrackerTrajectory &trajectory);
   void publishTrajectory(const int index);
   void callServiceTrigger(const int index);
   void timeoutFunction();

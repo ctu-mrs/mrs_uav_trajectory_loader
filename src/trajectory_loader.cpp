@@ -1,4 +1,6 @@
+/* includes //{ */
 #include "trajectory_loader.h"
+
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
@@ -7,43 +9,53 @@
 #include <algorithm>
 #include <boost/chrono/chrono_io.hpp>
 
+#include <mrs_lib/ParamLoader.h>
+//}
+
 using boost::lexical_cast;
 using std::string;
 namespace po = boost::program_options;
+
 
 /* TrajectoryLoader::TrajectoryLoader() //{ */
 
 TrajectoryLoader::TrajectoryLoader() {
   _nh_ = ros::NodeHandle("~");
+  
+  ROS_INFO("Loading general parameters:");
+  mrs_lib::ParamLoader param_loader(_nh_);
 
-  /* load parameters */
-  _service_topic_ = _nh_.param("service_topic", string(""));
-  if (_service_topic_.empty()) {
-    ROS_ERROR("Parameter service_topic is not set!");
+  param_loader.load_param("service_topic", _service_topic_);
+  param_loader.load_param("uav_name", _uav_name_, std::string());
+  param_loader.load_param("main/uav_name_list", _uav_name_list_);
+  param_loader.load_param("main/delay", _delay_list_);
+  param_loader.load_param("timeout_for_calling_services", _timeout_for_calling_services_, double(5));
+
+  if (!param_loader.loaded_successfully()) {
+    ROS_ERROR("Could not load all non-optional parameters!");
     ros::shutdown();
     return;
   }
 
-  _uav_name_ = _nh_.param("uav_name", string(""));
-  _nh_.getParam("main/uav_name_list", _uav_name_list_);
+  /* sanity checks //{ */
+  
   if (_uav_name_list_.empty()) {
     if (_uav_name_.empty()) {
       ROS_ERROR("uav_name_list (target UAVs) is empty!");
       ros::shutdown();
       return;
     } else {
-      ROS_INFO("uav_name_list (target UAVs) is empty -> setting the list to: [%s]", _uav_name_.c_str());
+      ROS_WARN("uav_name_list (target UAVs) is empty -> setting the list to: [%s]", _uav_name_.c_str());
       _uav_name_list_.push_back(_uav_name_);
     }
   }
-
-  _nh_.getParam("main/delay", _delay_list_);
+  
   if (_delay_list_.size() != _uav_name_list_.size()) {
-    ROS_ERROR("delay_list (parameter main/delay) should have the same size as uav_name_list!");
+    ROS_ERROR("delay_list (parameter 'main/delay') should have the same size as 'uav_name_list'!");
     ros::shutdown();
     return;
   }
-
+  
   // check if the delays are positive values and if some delays are set
   double delay_sum = 0;
   for (unsigned long i = 0; i < _delay_list_.size(); i++) {
@@ -54,7 +66,7 @@ TrajectoryLoader::TrajectoryLoader() {
       return;
     }
   }
-
+  
   char buff[100];
   if (delay_sum > 1e-5) {
     string delay_text = "Delays are set to: [ ";
@@ -68,13 +80,15 @@ TrajectoryLoader::TrajectoryLoader() {
     delay_text += "]";
     ROS_WARN("%s", delay_text.c_str());
   }
-
-  _timeout_for_calling_services_ = _nh_.param("timeout_for_calling_services", double(5));
+  
   if (_timeout_for_calling_services_ < 0) {
     ROS_ERROR("Parameter timeout_for_calling_services has to be positive value!");
     ros::shutdown();
     return;
   }
+  
+  //}
+
 }
 
 //}
@@ -82,13 +96,13 @@ TrajectoryLoader::TrajectoryLoader() {
 /* TrajectoryLoader::loadTrajectoryFromFile //{ */
 
 // method for loading trajectories from file into mrs_msgs/TrackerTrajectory msg
-void TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::TrackerTrajectory &trajectory) {
+bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::TrackerTrajectory &trajectory) {
   std::ifstream file_in(filename.c_str(), std::ifstream::in);
 
   if (!file_in) {
     ROS_ERROR("- Cannot open %s", filename.c_str());
     ros::shutdown();
-    return;
+    return false;
 
   } else {
 
@@ -111,7 +125,7 @@ void TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
       if (parts.size() != 4) {
         ROS_ERROR("- Incorrect format of the trajectory on line %d", int(new_traj.points.size() + 1));
         ros::shutdown();
-        return;
+        return false;
       }
 
       try {
@@ -123,7 +137,7 @@ void TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
       catch (...) {
         ROS_ERROR("- Some error occured during reading line %d", int(new_traj.points.size() + 1));
         ros::shutdown();
-        return;
+        return false;
       }
 
       point.x += _offset_list_[0];
@@ -141,6 +155,7 @@ void TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
     new_traj.loop         = _loop_;
     trajectory            = new_traj;
   }
+  return true;
 }
 
 //}
@@ -149,15 +164,38 @@ void TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
 
 // Main method for loading trajectories. This method creates independent thread for each uav.
 void TrajectoryLoader::loadMultipleTrajectories() {
-  /* get parameters */
-  _use_yaw_ = _nh_.param("use_yaw", false);
-  _fly_now_ = _nh_.param("fly_now", false);
-  _loop_    = _nh_.param("loop", false);
 
-  ROS_INFO("Trajectory setting parameters: FLY_NOW = %s, USE_YAW = %s, LOOP = %s", _fly_now_ ? "True" : "False", _use_yaw_ ? "True" : "False",
-           _loop_ ? "True" : "False");
+  // | ------------------------- params ------------------------- |
+  mrs_lib::ParamLoader param_loader(_nh_);
 
-  _nh_.getParam("main/offset", _offset_list_);
+  param_loader.load_param("use_yaw", _use_yaw_, bool(false));
+  param_loader.load_param("fly_now", _fly_now_, bool(false));
+  param_loader.load_param("loop", _loop_, bool(false));
+  param_loader.load_param("main/offset", _offset_list_);
+  param_loader.load_param("current_working_directory", _current_working_directory_);
+
+  string text;
+  string filename;
+  string filename_array[_uav_name_list_.size()];
+  if (_uav_name_list_.size() != 1 && _uav_name_ != _uav_name_list_[0]) {
+    for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
+      text            = _uav_name_list_[i] + "/filename";
+      param_loader.load_param(text.c_str(), filename);
+      filename_array[i] = _current_working_directory_ + filename;
+    }
+  } else {
+    param_loader.load_param("filename", filename);
+    filename_array[0] = _current_working_directory_ + filename;
+  }
+
+  if (!param_loader.loaded_successfully()) {
+    ROS_ERROR("Could not load all non-optional parameters!");
+    ros::shutdown();
+    return;
+  }
+
+  /* sanity checks //{ */
+
   if (_offset_list_.size() != 4) {
     ROS_ERROR("Parameter offset should be set to [x,y,z,yaw]!");
     ros::shutdown();
@@ -169,48 +207,23 @@ void TrajectoryLoader::loadMultipleTrajectories() {
     ROS_WARN("Trajectories will be offsetted by [%.2f, %.2f, %.2f, %.2f]", _offset_list_[0], _offset_list_[1], _offset_list_[2], _offset_list_[3]);
   }
 
-  _current_working_directory_ = _nh_.param("current_working_directory", string(""));
-  if (_current_working_directory_.empty()) {
-    ROS_ERROR("Parameter current_working_directory is not set!");
-    ros::shutdown();
-    return;
-  }
-
-  string text;
-  string filename_array[_uav_name_list_.size()];
-  if (_uav_name_list_.size() != 1 && _uav_name_ != _uav_name_list_[0]) {
-    for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-      text            = _uav_name_list_[i] + "/filename";
-      string filename = _nh_.param(text.c_str(), string(""));
-      if (filename.empty()) {
-        ROS_ERROR("Parameter %s is not set in config file!!", text.c_str());
-        ros::shutdown();
-        return;
-      }
-
-      filename_array[i] = _current_working_directory_ + filename;
-    }
-  } else {
-    text = _nh_.param("filename", string(""));
-    if (text.empty()) {
-      ROS_ERROR("Parameter filename is not set in config file!!");
-      ros::shutdown();
-      return;
-    }
-    filename_array[0] = _current_working_directory_ + text;
-  }
-
   /* load trajectories */
+  bool trajectory_sucessfully_loaded = true;
   ROS_INFO("Loading trajectories from files:");
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
     mrs_msgs::TrackerTrajectory msg;
-    loadTrajectoryFromFile(filename_array[i], msg);
+    trajectory_sucessfully_loaded &= loadTrajectoryFromFile(filename_array[i], msg);
     _trajectories_list_.push_back(msg);
   }
 
-  ROS_INFO("Trajectories successfully loaded into internal array.\n");
+  if (!trajectory_sucessfully_loaded){
+    return;
+  }
+  ROS_INFO("ALL trajectories successfully loaded.\n");
 
-  /* create services */
+  //}
+
+  // | ------------------------ services ------------------------ |
   string             topic;
   ros::ServiceClient sc;
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
@@ -220,7 +233,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
     result_info_list_.push_back(false);
   }
 
-  /* call services */
+  /* call services using individual threads */
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
     boost::thread *t = new boost::thread(&TrajectoryLoader::publishTrajectory, this, i);
     thread_group.add_thread(t);
@@ -238,7 +251,8 @@ void TrajectoryLoader::loadMultipleTrajectories() {
 
 // Main method for calling Trigger service. This method creates independent thread for each calling.
 void TrajectoryLoader::callMultipleServiceTriggers() {
-  /* create services */
+
+  // | ------------------------ services ------------------------ |
   string             topic;
   ros::ServiceClient sc;
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
@@ -410,6 +424,12 @@ int main(int argc, char **argv) {
   }
 
   //}
+  
+  if(vm.count("load")){
+    ROS_INFO("-------------- trajectory_loader - set for loading trajectories -----------------");
+  }else{
+    ROS_INFO("-------------- trajectory_loader - set for calling trigger service -----------------");
+  }
 
   // initialize ROS
   ros::init(argc, argv, "trajectory_loader");
@@ -420,16 +440,10 @@ int main(int argc, char **argv) {
 
   // compare argument if it is equal to "--load"
   if (vm.count("load")) {
-
-    ROS_INFO("LOADING ....");
     trajectory_loader.loadMultipleTrajectories();
-
     // or "--call-trigger-service"
   } else if (vm.count("call-trigger-service")) {
-
-    ROS_INFO("CALLING TRIGGER SERVICE ....");
     trajectory_loader.callMultipleServiceTriggers();
-
     // otherwise call help()
   } else {
     std::cout << desc << "\n";

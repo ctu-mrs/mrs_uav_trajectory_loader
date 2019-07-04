@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  mrs_lib
 )
 
 find_package(Boost COMPONENTS program_options thread REQUIRED)
