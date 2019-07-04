@@ -22,12 +22,13 @@ catkin_package()
 ###########
 
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a C++ executable
-add_executable(load_trajectory src/main.cpp)
+add_executable(load_trajectory src/trajectory_loader.cpp)
 add_dependencies(load_trajectory ${catkin_EXPORTED_TARGETS})
 target_link_libraries(load_trajectory
   ${catkin_LIBRARIES}
