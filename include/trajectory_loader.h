@@ -25,8 +25,8 @@ private:
   std::vector<std::string> _uav_name_list_;
 
   std::vector<bool>                        result_info_list_;
-  std::vector<mrs_msgs::TrackerTrajectory> _trajectories_list_;
-  std::vector<ros::ServiceClient>          _service_client_list_;
+  std::vector<mrs_msgs::TrackerTrajectory> trajectories_list_;
+  std::vector<ros::ServiceClient>          service_client_list_;
 
   /* functions definition */
   bool loadTrajectoryFromFile(const std::string &filename, mrs_msgs::TrackerTrajectory &trajectory);

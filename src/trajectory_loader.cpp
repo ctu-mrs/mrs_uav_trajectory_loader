@@ -216,7 +216,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
     mrs_msgs::TrackerTrajectory msg;
     trajectory_sucessfully_loaded &= loadTrajectoryFromFile(filename_array[i], msg);
-    _trajectories_list_.push_back(msg);
+    trajectories_list_.push_back(msg);
   }
 
   if (!trajectory_sucessfully_loaded){
@@ -232,7 +232,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
     topic = "/" + _uav_name_list_[i] + "/" + _service_topic_;
     sc    = _nh_.serviceClient<mrs_msgs::TrackerTrajectorySrv>(topic.c_str());
-    _service_client_list_.push_back(sc);
+    service_client_list_.push_back(sc);
     result_info_list_.push_back(false);
   }
 
@@ -259,7 +259,7 @@ void TrajectoryLoader::callMultipleServiceTriggers() {
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
     topic = "/" + _uav_name_list_[i] + "/" + _service_topic_;
     sc    = _nh_.serviceClient<std_srvs::Trigger>(topic.c_str());
-    _service_client_list_.push_back(sc);
+    service_client_list_.push_back(sc);
     result_info_list_.push_back(false);
   }
 
@@ -318,17 +318,17 @@ void TrajectoryLoader::publishTrajectory(const int index) {
   // sleep if delay is set
   if (_delay_list_[index] > 1e-3) {
     ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[index].c_str(), _delay_list_[index],
-             _service_client_list_[index].getService().c_str());
+             service_client_list_[index].getService().c_str());
     ros::Duration(_delay_list_[index]).sleep();
   }
 
-  ROS_INFO("%s: Calling service: %s", _uav_name_list_[index].c_str(), _service_client_list_[index].getService().c_str());
+  ROS_INFO("%s: Calling service: %s", _uav_name_list_[index].c_str(), service_client_list_[index].getService().c_str());
 
   mrs_msgs::TrackerTrajectorySrv srv;
-  srv.request.trajectory_msg = _trajectories_list_[index];
+  srv.request.trajectory_msg = trajectories_list_[index];
 
   // calling service
-  if (_service_client_list_[index].call(srv)) {
+  if (service_client_list_[index].call(srv)) {
     // when the calling was successful and the client received response
     if (srv.response.success) {
       ROS_INFO("%s: %s", _uav_name_list_[index].c_str(), srv.response.message.c_str());
@@ -351,15 +351,15 @@ void TrajectoryLoader::callServiceTrigger(const int index) {
   // sleep if delay is set
   if (_delay_list_[index] > 1e-3) {
     ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[index].c_str(), _delay_list_[index],
-             _service_client_list_[index].getService().c_str());
+             service_client_list_[index].getService().c_str());
     ros::Duration(_delay_list_[index]).sleep();
   }
 
-  ROS_INFO("%s: Calling service: %s", _uav_name_list_[index].c_str(), _service_client_list_[index].getService().c_str());
+  ROS_INFO("%s: Calling service: %s", _uav_name_list_[index].c_str(), service_client_list_[index].getService().c_str());
 
   std_srvs::Trigger srv;
   // calling service
-  if (_service_client_list_[index].call(srv)) {
+  if (service_client_list_[index].call(srv)) {
     // when the calling was successful and the client received response
     if (srv.response.success) {
       ROS_INFO("%s: %s", _uav_name_list_[index].c_str(), srv.response.message.c_str());
