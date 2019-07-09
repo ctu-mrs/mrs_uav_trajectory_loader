@@ -24,7 +24,7 @@ namespace po = boost::program_options;
 
 TrajectoryLoader::TrajectoryLoader() {
   _nh_ = ros::NodeHandle("~");
-  
+
   ROS_INFO("Loading general parameters:");
   mrs_lib::ParamLoader param_loader(_nh_);
 
@@ -41,7 +41,7 @@ TrajectoryLoader::TrajectoryLoader() {
   }
 
   /* sanity checks //{ */
-  
+
   if (_uav_name_list_.empty()) {
     if (_uav_name_.empty()) {
       ROS_ERROR("uav_name_list (target UAVs) is empty!");
@@ -52,13 +52,13 @@ TrajectoryLoader::TrajectoryLoader() {
       _uav_name_list_.push_back(_uav_name_);
     }
   }
-  
+
   if (_delay_list_.size() != _uav_name_list_.size()) {
     ROS_ERROR("delay_list (parameter 'main/delay') should have the same size as 'uav_name_list'!");
     ros::shutdown();
     return;
   }
-  
+
   // check if the delays are positive values and if some delays are set
   double delay_sum = 0;
   for (unsigned long i = 0; i < _delay_list_.size(); i++) {
@@ -69,7 +69,7 @@ TrajectoryLoader::TrajectoryLoader() {
       return;
     }
   }
-  
+
   char buff[100];
   if (delay_sum > 1e-5) {
     string delay_text = "Delays are set to: [ ";
@@ -83,15 +83,14 @@ TrajectoryLoader::TrajectoryLoader() {
     delay_text += "]";
     ROS_WARN("%s", delay_text.c_str());
   }
-  
+
   if (_timeout_for_calling_services_ < 0) {
     ROS_ERROR("Parameter timeout_for_calling_services has to be positive value!");
     ros::shutdown();
     return;
   }
-  
-  //}
 
+  //}
 }
 
 //}
@@ -182,7 +181,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   string filename_array[_uav_name_list_.size()];
   if (_uav_name_list_.size() != 1 && _uav_name_ != _uav_name_list_[0]) {
     for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-      text            = _uav_name_list_[i] + "/filename";
+      text = _uav_name_list_[i] + "/filename";
       param_loader.load_param(text.c_str(), filename);
       filename_array[i] = _current_working_directory_ + filename;
     }
@@ -219,7 +218,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
     trajectories_list_.push_back(msg);
   }
 
-  if (!trajectory_sucessfully_loaded){
+  if (!trajectory_sucessfully_loaded) {
     return;
   }
   ROS_INFO("ALL trajectories successfully loaded.\n");
@@ -238,8 +237,12 @@ void TrajectoryLoader::loadMultipleTrajectories() {
 
   /* call services using individual threads */
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-    boost::shared_ptr<boost::thread> t = boost::make_shared<boost::thread>(&TrajectoryLoader::publishTrajectory, this, i);
-    thread_list_.push_back(t);
+    if (_delay_list_[i] > 1e-3) {
+      ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[i].c_str(), _delay_list_[i],
+               service_client_list_[i].getService().c_str());
+    }
+    thread_list_.push_back(_nh_.createTimer(ros::Rate(ros::Duration(_delay_list_[i])), &TrajectoryLoader::publishTrajectory, this, true,
+                                            true));  // the last boolean argument makes the timer run only once);
   }
 
   /* timeout for threads */
@@ -294,19 +297,17 @@ void TrajectoryLoader::timeoutFunction() {
     }
     if (total_result) {
       ROS_INFO("Main thread: All service threads finished.");
-      break;
+      return;
     }
   }
 
-  if (current_timeout >= timeout) {
     ROS_ERROR("Main thread: Timeout reached --> terminating all remaining threads");
     for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
       if (!result_info_list_.at(i)) {
         ROS_ERROR("%s: Deadlock during calling. Shutting down the thread.", _uav_name_list_.at(i).c_str());
-        pthread_cancel(thread_list_.at(i)->native_handle());
+        thread_list_.at(i).stop();
       }
     }
-  }
 }
 
 //}
@@ -426,10 +427,10 @@ int main(int argc, char **argv) {
   }
 
   //}
-  
-  if(vm.count("load")){
+
+  if (vm.count("load")) {
     ROS_INFO("-------------- trajectory_loader - set for loading trajectories -----------------");
-  }else{
+  } else {
     ROS_INFO("-------------- trajectory_loader - set for calling trigger service -----------------");
   }
 

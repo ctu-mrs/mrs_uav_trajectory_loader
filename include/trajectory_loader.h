@@ -4,7 +4,6 @@
 #include <mrs_msgs/TrackerTrajectorySrv.h>
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
-#include <boost/thread/thread.hpp>
 
 class TrajectoryLoader {
 private:
@@ -35,7 +34,7 @@ private:
   void timeoutFunction();
 
   /* threads for asynchronous calling */
-  std::vector<boost::shared_ptr<boost::thread>> thread_list_;
+  std::vector<ros::Timer> thread_list_;
 
 public:
   TrajectoryLoader();
