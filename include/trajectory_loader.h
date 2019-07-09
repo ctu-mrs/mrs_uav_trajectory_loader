@@ -29,8 +29,8 @@ private:
 
   /* functions definition */
   bool loadTrajectoryFromFile(const std::string &filename, mrs_msgs::TrackerTrajectory &trajectory);
-  void publishTrajectory(const int index);
-  void callServiceTrigger(const int index);
+  void publishTrajectory(const ros::TimerEvent& event, const int index);
+  void callServiceTrigger(const ros::TimerEvent& event, const int index);
   void timeoutFunction();
 
   /* threads for asynchronous calling */

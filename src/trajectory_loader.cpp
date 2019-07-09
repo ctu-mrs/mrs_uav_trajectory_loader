@@ -241,7 +241,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
       ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[i].c_str(), _delay_list_[i],
                service_client_list_[i].getService().c_str());
     }
-    thread_list_.push_back(_nh_.createTimer(ros::Rate(ros::Duration(_delay_list_[i])), &TrajectoryLoader::publishTrajectory, this, true,
+    thread_list_.push_back(_nh_.createTimer(ros::Duration(_delay_list_[i]), boost::bind(&TrajectoryLoader::publishTrajectory, this, _1, i), true,
                                             true));  // the last boolean argument makes the timer run only once);
   }
 
@@ -266,10 +266,14 @@ void TrajectoryLoader::callMultipleServiceTriggers() {
     result_info_list_.push_back(false);
   }
 
-  /* call services */
+  /* call services using individual threads */
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-    boost::shared_ptr<boost::thread> t = boost::make_shared<boost::thread>(&TrajectoryLoader::callServiceTrigger, this, i);
-    thread_list_.push_back(t);
+    if (_delay_list_[i] > 1e-3) {
+      ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[i].c_str(), _delay_list_[i],
+               service_client_list_[i].getService().c_str());
+    }
+    thread_list_.push_back(_nh_.createTimer(ros::Duration(_delay_list_[i]), boost::bind(&TrajectoryLoader::callServiceTrigger, this, _1, i), true,
+                                            true));  // the last boolean argument makes the timer run only once);
   }
 
   /* timeout for threads */
@@ -315,7 +319,7 @@ void TrajectoryLoader::timeoutFunction() {
 /* TrajectoryLoader::publishTrajectory() //{ */
 
 // Method for publishing trajectory msg on specific service topic
-void TrajectoryLoader::publishTrajectory(const int index) {
+void TrajectoryLoader::publishTrajectory(const ros::TimerEvent&, const int index) {
   // sleep if delay is set
   if (_delay_list_[index] > 1e-3) {
     ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[index].c_str(), _delay_list_[index],
@@ -348,7 +352,7 @@ void TrajectoryLoader::publishTrajectory(const int index) {
 /* TrajectoryLoader::callServiceTrigger() //{ */
 
 // Method for calling service msg Trigger on specific topic
-void TrajectoryLoader::callServiceTrigger(const int index) {
+void TrajectoryLoader::callServiceTrigger(const ros::TimerEvent&, const int index) {
   // sleep if delay is set
   if (_delay_list_[index] > 1e-3) {
     ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[index].c_str(), _delay_list_[index],
