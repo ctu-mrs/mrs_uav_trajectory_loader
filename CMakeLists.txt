@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Boost COMPONENTS program_options thread REQUIRED)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fno-diagnostics-color")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fno-diagnostics-color -g -O0")
 
 catkin_package()
 

@@ -5,9 +5,13 @@
   <arg name="fly_now" default="false"/>
   <arg name="loop" default="false"/>
 
+  <arg name="debug" default="false" />
+  <arg unless="$(arg debug)" name="launch_prefix" value=""/>
+  <arg     if="$(arg debug)" name="launch_prefix" value="debug_roslaunch"/>
+
 	<group ns="$(arg uav_name)">
 	
-		<node name="trajectory_loader" pkg="trajectory_loader" type="load_trajectory" args="--load" output="screen" >
+		<node name="trajectory_loader" pkg="trajectory_loader" type="load_trajectory" args="--load" output="screen" launch-prefix="$(arg launch_prefix)" >
     
       <rosparam file="$(find trajectory_loader)/config/params.yaml" />
 

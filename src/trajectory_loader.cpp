@@ -293,11 +293,12 @@ void TrajectoryLoader::timeoutFunction() {
   const double timestep        = 0.1;
   double       current_timeout = 0;
   while (current_timeout < timeout) {
+    ros::spinOnce();
     ros::Duration(timestep).sleep();
     current_timeout += timestep;
     bool total_result = true;
     for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-      total_result &= result_info_list_.at(i);
+      total_result = total_result && result_info_list_.at(i);
     }
     if (total_result) {
       ROS_INFO("Main thread: All service threads finished.");
@@ -312,6 +313,7 @@ void TrajectoryLoader::timeoutFunction() {
       thread_list_.at(i).stop();
     }
   }
+  ros::spinOnce();
 }
 
 //}
