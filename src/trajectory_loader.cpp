@@ -221,7 +221,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   if (!trajectory_sucessfully_loaded) {
     return;
   }
-  ROS_INFO("ALL trajectories successfully loaded.\n");
+  ROS_INFO("All trajectories have been found.\n");
 
   //}
 
@@ -305,13 +305,13 @@ void TrajectoryLoader::timeoutFunction() {
     }
   }
 
-    ROS_ERROR("Main thread: Timeout reached --> terminating all remaining threads");
-    for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-      if (!result_info_list_.at(i)) {
-        ROS_ERROR("%s: Deadlock during calling. Shutting down the thread.", _uav_name_list_.at(i).c_str());
-        thread_list_.at(i).stop();
-      }
+  ROS_ERROR("Main thread: Timeout reached --> terminating all remaining threads");
+  for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
+    if (!result_info_list_.at(i)) {
+      ROS_ERROR("%s: Deadlock during calling. Shutting down the thread.", _uav_name_list_.at(i).c_str());
+      thread_list_.at(i).stop();
     }
+  }
 }
 
 //}
@@ -319,14 +319,7 @@ void TrajectoryLoader::timeoutFunction() {
 /* TrajectoryLoader::publishTrajectory() //{ */
 
 // Method for publishing trajectory msg on specific service topic
-void TrajectoryLoader::publishTrajectory(const ros::TimerEvent&, const int index) {
-  // sleep if delay is set
-  if (_delay_list_[index] > 1e-3) {
-    ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[index].c_str(), _delay_list_[index],
-             service_client_list_[index].getService().c_str());
-    ros::Duration(_delay_list_[index]).sleep();
-  }
-
+void TrajectoryLoader::publishTrajectory([[maybe_unused]] const ros::TimerEvent & event, const int index) {
   ROS_INFO("%s: Calling service: %s", _uav_name_list_[index].c_str(), service_client_list_[index].getService().c_str());
 
   mrs_msgs::TrackerTrajectorySrv srv;
@@ -352,14 +345,7 @@ void TrajectoryLoader::publishTrajectory(const ros::TimerEvent&, const int index
 /* TrajectoryLoader::callServiceTrigger() //{ */
 
 // Method for calling service msg Trigger on specific topic
-void TrajectoryLoader::callServiceTrigger(const ros::TimerEvent&, const int index) {
-  // sleep if delay is set
-  if (_delay_list_[index] > 1e-3) {
-    ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[index].c_str(), _delay_list_[index],
-             service_client_list_[index].getService().c_str());
-    ros::Duration(_delay_list_[index]).sleep();
-  }
-
+void TrajectoryLoader::callServiceTrigger([[maybe_unused]] const ros::TimerEvent &event, const int index) {
   ROS_INFO("%s: Calling service: %s", _uav_name_list_[index].c_str(), service_client_list_[index].getService().c_str());
 
   std_srvs::Trigger srv;
