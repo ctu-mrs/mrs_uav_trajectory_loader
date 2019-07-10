@@ -292,8 +292,11 @@ void TrajectoryLoader::timeoutFunction() {
   ROS_INFO("Main thread: Sleeping for %.1f before termination of all threads", timeout);
   const double timestep        = 0.1;
   double       current_timeout = 0;
+
+  ros::AsyncSpinner spinner(_uav_name_list_.size());
+  spinner.start();
+
   while (current_timeout < timeout) {
-    ros::spinOnce();
     ros::Duration(timestep).sleep();
     current_timeout += timestep;
     bool total_result = true;
@@ -313,7 +316,6 @@ void TrajectoryLoader::timeoutFunction() {
       thread_list_.at(i).stop();
     }
   }
-  ros::spinOnce();
 }
 
 //}
@@ -444,6 +446,7 @@ int main(int argc, char **argv) {
     std::cout << desc << "\n";
     return 1;
   }
+  ros::shutdown();
 };
 
 //}
