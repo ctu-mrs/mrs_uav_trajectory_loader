@@ -179,7 +179,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   string text;
   string filename;
   string filename_array[_uav_name_list_.size()];
-  if (_uav_name_list_.size() != 1 && _uav_name_ != _uav_name_list_[0]) {
+  if (_uav_name_list_.size() != 1 || (_uav_name_list_.size() == 1 && _uav_name_ != _uav_name_list_[0])) {
     for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
       text = _uav_name_list_[i] + "/filename";
       param_loader.load_param(text.c_str(), filename);
@@ -323,7 +323,7 @@ void TrajectoryLoader::timeoutFunction() {
 /* TrajectoryLoader::publishTrajectory() //{ */
 
 // Method for publishing trajectory msg on specific service topic
-void TrajectoryLoader::publishTrajectory([[maybe_unused]] const ros::TimerEvent & event, const int index) {
+void TrajectoryLoader::publishTrajectory([[maybe_unused]] const ros::TimerEvent &event, const int index) {
   ROS_INFO("%s: Calling service: %s", _uav_name_list_[index].c_str(), service_client_list_[index].getService().c_str());
 
   mrs_msgs::TrackerTrajectorySrv srv;
