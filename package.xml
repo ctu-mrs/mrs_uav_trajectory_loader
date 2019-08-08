@@ -2,7 +2,7 @@
 <package format="2">
 
   <name>trajectory_loader</name>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
   <description>A package for loading trajectories and calling multiple trigger messages.</description>
 
   <author email="vojtech.spurny@fel.cvut.cz">Vojta Spurny</author>

@@ -2,8 +2,8 @@
 Changelog for package trajectory_loader
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.2 (2019-08-08)
+------------------
 * fixed loading with ^M in the files
 * fixed bug when the uav_list constains only one drone
 * Added AsyncSpinner
