@@ -121,6 +121,8 @@ bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
       boost::replace_all(line, ",", " ");
       // if now line contains two space replace them with one space
       boost::replace_all(line, "  ", " ");
+      // remove ^M is Windows carriage return
+      boost::replace_all(line, "\r", "");
       // split string using space delimiter
       boost::split(parts, line, boost::is_any_of(" "));
 
