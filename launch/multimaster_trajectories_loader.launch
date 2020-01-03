@@ -15,12 +15,12 @@
     
       <rosparam file="$(find trajectory_loader)/config/params.yaml" />
 
-      <param name="current_working_directory" type="string" value="$(find balloon_planner)/" />	
+      <param name="current_working_directory" type="string" value="$(find balloon_filter)/" />	
 			<param name="service_topic" type="string" value="control_manager/mpc_tracker/set_trajectory" />	
       
       <param name="use_yaw" type="bool" value="$(arg use_yaw)" />
       <param name="fly_now" type="bool" value="$(arg fly_now)" />
-      <param name="loop" type="bool" value="$(arg loop)" />
+      <!-- <param name="loop" type="bool" value="$(arg loop)" /> -->
     
     </node>
 	</group>
