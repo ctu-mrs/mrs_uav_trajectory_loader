@@ -20,7 +20,7 @@
       
       <param name="use_yaw" type="bool" value="$(arg use_yaw)" />
       <param name="fly_now" type="bool" value="$(arg fly_now)" />
-      <param name="loop" type="bool" value="$(arg loop)" />
+      <!-- <param name="loop" type="bool" value="$(arg loop)" /> -->
     
     </node>
 	</group>
