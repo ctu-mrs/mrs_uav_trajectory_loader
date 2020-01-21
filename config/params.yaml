@@ -1,5 +1,5 @@
 main:
-  uav_name_list: [uav1]
+  uav_name_list: [uav2]
   offset: [0.0, 0.0, 0.0, 0.0]      # offset for all trajectories [x,y,z,yaw]
   delay: [0.0]            # delays before calling the service (in seconds)
 
