@@ -335,7 +335,11 @@ void TrajectoryLoader::publishTrajectory([[maybe_unused]] const ros::TimerEvent 
   if (service_client_list_[index].call(srv)) {
     // when the calling was successful and the client received response
     if (srv.response.success) {
-      ROS_INFO("%s: %s", _uav_name_list_[index].c_str(), srv.response.message.c_str());
+      if (srv.response.modified) {
+        ROS_WARN("%s: %s", _uav_name_list_[index].c_str(), srv.response.message.c_str());
+      } else {
+        ROS_INFO("%s: %s", _uav_name_list_[index].c_str(), srv.response.message.c_str());
+      }
     } else {
       ROS_ERROR("%s: %s", _uav_name_list_[index].c_str(), srv.response.message.c_str());
     }
