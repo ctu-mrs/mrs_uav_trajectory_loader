@@ -13,9 +13,9 @@
 	
 		<node name="trajectory_loader" pkg="trajectory_loader" type="load_trajectory" args="--load" output="screen" launch-prefix="$(arg launch_prefix)" >
     
-      <rosparam file="$(find trajectory_loader)/config/line_50.yaml" />
+      <rosparam file="$(find trajectory_loader)/config/eight_8ms.yaml" />
+			<param name="current_working_directory" type="string" value="$(find balloon_filter)" />	
 
-			<param name="current_working_directory" type="string" value="$(find trajectory_loader)" />	
 			<param name="service_topic" type="string" value="control_manager/mpc_tracker/set_trajectory" />	
       
       <param name="use_yaw" type="bool" value="$(arg use_yaw)" />
