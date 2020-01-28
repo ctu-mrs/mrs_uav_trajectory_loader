@@ -8,6 +8,7 @@
 
       <rosparam file="$(find trajectory_loader)/config/eight_8ms.yaml" />
 			<param name="current_working_directory" type="string" value="$(find balloon_filter)" />	
+
       <param name="service_topic" type="string" value="control_manager/mpc_tracker/start_trajectory_following" />
 
     </node>
