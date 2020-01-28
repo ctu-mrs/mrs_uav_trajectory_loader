@@ -6,6 +6,4 @@ main:
 timeout_for_calling_services: 3     # maximal waiting time for response after calling service
 
 uav1:
-  filename: /sample_trajectory/eight_8ms.txt
-
-loop: true
+  filename: /sample_trajectory/circle_15_8.txt
