@@ -153,7 +153,7 @@ bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
     }
     file_in.close();
 
-    new_traj.header.stamp = ros::Time::now();
+    new_traj.header.stamp = ros::Time(0);
     new_traj.use_yaw      = _use_yaw_;
     new_traj.fly_now      = _fly_now_;
     new_traj.loop         = _loop_;
