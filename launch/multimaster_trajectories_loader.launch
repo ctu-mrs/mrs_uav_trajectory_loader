@@ -4,6 +4,7 @@
   <arg name="use_yaw" default="true"/>
   <arg name="fly_now" default="false"/>
   <arg name="loop" default="false"/>
+  <arg name="dt" default="0.2"/>
 
   <arg name="debug" default="false" />
   <arg unless="$(arg debug)" name="launch_prefix" value=""/>
@@ -16,11 +17,12 @@
       <rosparam file="$(find trajectory_loader)/config/line_50.yaml" />
 
 			<param name="current_working_directory" type="string" value="$(find trajectory_loader)" />	
-			<param name="service_topic" type="string" value="control_manager/mpc_tracker/set_trajectory" />	
+			<param name="service_topic" type="string" value="control_manager/trajectory_reference" />	
       
       <param name="use_yaw" type="bool" value="$(arg use_yaw)" />
       <param name="fly_now" type="bool" value="$(arg fly_now)" />
       <param name="loop" type="bool" value="$(arg loop)" />
+      <param name="dt" type="double" value="$(arg dt)" />
     
     </node>
 	</group>

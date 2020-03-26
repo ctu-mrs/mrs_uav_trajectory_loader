@@ -1,7 +1,7 @@
 #ifndef TRAJECTORY_LOADER_H
 #define TRAJECTORY_LOADER_H
 
-#include <mrs_msgs/TrackerTrajectorySrv.h>
+#include <mrs_msgs/TrajectoryReferenceSrv.h>
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
 
@@ -14,6 +14,7 @@ private:
   bool        _use_yaw_;  // whether to fly trajectory with desired yaw
   bool        _fly_now_;  // whether to start tracking the trajectory immediately after loading
   bool        _loop_;     // whether to fly trajectory in loop (infinitely times)
+  bool        _dt_;
 
   /* config parameters */
   double                   _timeout_for_calling_services_;
@@ -23,12 +24,12 @@ private:
   std::string              _service_topic_;
   std::vector<std::string> _uav_name_list_;
 
-  std::vector<bool>                        result_info_list_;
-  std::vector<mrs_msgs::TrackerTrajectory> trajectories_list_;
-  std::vector<ros::ServiceClient>          service_client_list_;
+  std::vector<bool>                          result_info_list_;
+  std::vector<mrs_msgs::TrajectoryReference> trajectories_list_;
+  std::vector<ros::ServiceClient>            service_client_list_;
 
   /* functions definition */
-  bool loadTrajectoryFromFile(const std::string &filename, mrs_msgs::TrackerTrajectory &trajectory);
+  bool loadTrajectoryFromFile(const std::string& filename, mrs_msgs::TrajectoryReference& trajectory);
   void publishTrajectory(const ros::TimerEvent& event, const int index);
   void callServiceTrigger(const ros::TimerEvent& event, const int index);
   void timeoutFunction();

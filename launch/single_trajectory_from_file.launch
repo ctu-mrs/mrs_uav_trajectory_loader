@@ -6,6 +6,7 @@
   <arg name="use_yaw" default="true"/>
   <arg name="fly_now" default="false"/>
   <arg name="loop" default="false"/>
+  <arg name="dt" default="0.2"/>
 
   <group ns="$(arg uav_name)">
 
@@ -19,6 +20,7 @@
       <param name="use_yaw" type="bool" value="$(arg use_yaw)" />
       <param name="fly_now" type="bool" value="$(arg fly_now)" />
       <param name="loop" type="bool" value="$(arg loop)" />
+      <param name="dt" type="double" value="$(arg dt)" />
       <param name="uav_name" type="string" value="$(arg uav_name)" />
       <param name="timeout_for_calling_services" type="double" value="3" />
 

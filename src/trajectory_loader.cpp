@@ -97,8 +97,8 @@ TrajectoryLoader::TrajectoryLoader() {
 
 /* TrajectoryLoader::loadTrajectoryFromFile //{ */
 
-// method for loading trajectories from file into mrs_msgs/TrackerTrajectory msg
-bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::TrackerTrajectory &trajectory) {
+// method for loading trajectories from file into mrs_msgs/TrajectoryReference msg
+bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::TrajectoryReference &trajectory) {
   std::ifstream file_in(filename.c_str(), std::ifstream::in);
 
   if (!file_in) {
@@ -110,10 +110,10 @@ bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
 
     ROS_INFO("- Loading trajectory from %s", filename.c_str());
 
-    string                      line;
-    mrs_msgs::TrackerTrajectory new_traj;
-    mrs_msgs::TrackerPoint      point;
-    std::vector<string>         parts;
+    string                        line;
+    mrs_msgs::TrajectoryReference new_traj;
+    mrs_msgs::Reference           point;
+    std::vector<string>           parts;
 
     /* for each line in file */
     while (getline(file_in, line)) {
@@ -133,10 +133,10 @@ bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
       }
 
       try {
-        point.x   = lexical_cast<double>(parts[0]);
-        point.y   = lexical_cast<double>(parts[1]);
-        point.z   = lexical_cast<double>(parts[2]);
-        point.yaw = lexical_cast<double>(parts[3]);
+        point.position.x = lexical_cast<double>(parts[0]);
+        point.position.y = lexical_cast<double>(parts[1]);
+        point.position.z = lexical_cast<double>(parts[2]);
+        point.yaw        = lexical_cast<double>(parts[3]);
       }
       catch (...) {
         ROS_ERROR("- Some error occured during reading line %d", int(new_traj.points.size() + 1));
@@ -144,9 +144,9 @@ bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
         return false;
       }
 
-      point.x += _offset_list_[0];
-      point.y += _offset_list_[1];
-      point.z += _offset_list_[2];
+      point.position.x += _offset_list_[0];
+      point.position.y += _offset_list_[1];
+      point.position.z += _offset_list_[2];
       point.yaw += _offset_list_[3];
 
       new_traj.points.push_back(point);
@@ -156,6 +156,7 @@ bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
     new_traj.header.stamp = ros::Time(0);
     new_traj.use_yaw      = _use_yaw_;
     new_traj.fly_now      = _fly_now_;
+    new_traj.dt           = _dt_;
     new_traj.loop         = _loop_;
     trajectory            = new_traj;
   }
@@ -174,6 +175,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
 
   param_loader.load_param("use_yaw", _use_yaw_, bool(false));
   param_loader.load_param("fly_now", _fly_now_, bool(false));
+  param_loader.load_param("dt", _dt_);
   param_loader.load_param("loop", _loop_, bool(false));
   param_loader.load_param("main/offset", _offset_list_);
   param_loader.load_param("current_working_directory", _current_working_directory_);
@@ -215,7 +217,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   bool trajectory_sucessfully_loaded = true;
   ROS_INFO("Loading trajectories from files:");
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-    mrs_msgs::TrackerTrajectory msg;
+    mrs_msgs::TrajectoryReference msg;
     trajectory_sucessfully_loaded &= loadTrajectoryFromFile(filename_array[i], msg);
     trajectories_list_.push_back(msg);
   }
@@ -232,7 +234,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   ros::ServiceClient sc;
   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
     topic = "/" + _uav_name_list_[i] + "/" + _service_topic_;
-    sc    = _nh_.serviceClient<mrs_msgs::TrackerTrajectorySrv>(topic.c_str());
+    sc    = _nh_.serviceClient<mrs_msgs::TrajectoryReferenceSrv>(topic.c_str());
     service_client_list_.push_back(sc);
     result_info_list_.push_back(false);
   }
@@ -328,8 +330,8 @@ void TrajectoryLoader::timeoutFunction() {
 void TrajectoryLoader::publishTrajectory([[maybe_unused]] const ros::TimerEvent &event, const int index) {
   ROS_INFO("%s: Calling service: %s", _uav_name_list_[index].c_str(), service_client_list_[index].getService().c_str());
 
-  mrs_msgs::TrackerTrajectorySrv srv;
-  srv.request.trajectory_msg = trajectories_list_[index];
+  mrs_msgs::TrajectoryReferenceSrv srv;
+  srv.request.trajectory = trajectories_list_[index];
 
   // calling service
   if (service_client_list_[index].call(srv)) {
