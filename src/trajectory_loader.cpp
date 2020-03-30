@@ -1,5 +1,9 @@
 /* includes //{ */
-#include "trajectory_loader.h"
+
+#include <ros/ros.h>
+
+#include <mrs_msgs/TrajectoryReferenceSrv.h>
+#include <std_srvs/Trigger.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -19,6 +23,47 @@ using boost::lexical_cast;
 using std::string;
 namespace po = boost::program_options;
 
+/* class TrajectoryLoader //{ */
+
+class TrajectoryLoader {
+private:
+  ros::NodeHandle _nh_;
+
+  /* trajectory parameters */
+  std::string _current_working_directory_;
+  bool        _use_heading_;  // whether to fly trajectory with desired heading
+  bool        _fly_now_;      // whether to start tracking the trajectory immediately after loading
+  bool        _loop_;         // whether to fly trajectory in loop (infinitely times)
+  double      _dt_;
+
+  /* config parameters */
+  double                   _timeout_for_calling_services_;
+  std::string              _uav_name_;
+  std::vector<double>      _offset_list_;
+  std::vector<double>      _delay_list_;
+  std::string              _service_topic_;
+  std::vector<std::string> _uav_name_list_;
+
+  std::vector<bool>                          result_info_list_;
+  std::vector<mrs_msgs::TrajectoryReference> trajectories_list_;
+  std::vector<ros::ServiceClient>            service_client_list_;
+
+  /* functions definition */
+  bool loadTrajectoryFromFile(const std::string &filename, mrs_msgs::TrajectoryReference &trajectory);
+  void publishTrajectory(const ros::TimerEvent &event, const int index);
+  void callServiceTrigger(const ros::TimerEvent &event, const int index);
+  void timeoutFunction();
+
+  /* threads for asynchronous calling */
+  std::vector<ros::Timer> thread_list_;
+
+public:
+  TrajectoryLoader();
+  void loadMultipleTrajectories();
+  void callMultipleServiceTriggers();
+};
+
+//}
 
 /* TrajectoryLoader::TrajectoryLoader() //{ */
 
@@ -99,6 +144,7 @@ TrajectoryLoader::TrajectoryLoader() {
 
 // method for loading trajectories from file into mrs_msgs/TrajectoryReference msg
 bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::TrajectoryReference &trajectory) {
+
   std::ifstream file_in(filename.c_str(), std::ifstream::in);
 
   if (!file_in) {
@@ -136,7 +182,7 @@ bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
         point.position.x = lexical_cast<double>(parts[0]);
         point.position.y = lexical_cast<double>(parts[1]);
         point.position.z = lexical_cast<double>(parts[2]);
-        point.yaw        = lexical_cast<double>(parts[3]);
+        point.heading    = lexical_cast<double>(parts[3]);
       }
       catch (...) {
         ROS_ERROR("- Some error occured during reading line %d", int(new_traj.points.size() + 1));
@@ -147,14 +193,14 @@ bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
       point.position.x += _offset_list_[0];
       point.position.y += _offset_list_[1];
       point.position.z += _offset_list_[2];
-      point.yaw += _offset_list_[3];
+      point.heading += _offset_list_[3];
 
       new_traj.points.push_back(point);
     }
     file_in.close();
 
     new_traj.header.stamp = ros::Time(0);
-    new_traj.use_yaw      = _use_yaw_;
+    new_traj.use_heading  = _use_heading_;
     new_traj.fly_now      = _fly_now_;
     new_traj.dt           = _dt_;
     new_traj.loop         = _loop_;
@@ -173,7 +219,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   // | ------------------------- params ------------------------- |
   mrs_lib::ParamLoader param_loader(_nh_);
 
-  param_loader.load_param("use_yaw", _use_yaw_, bool(false));
+  param_loader.load_param("use_heading", _use_heading_, bool(false));
   param_loader.load_param("fly_now", _fly_now_, bool(false));
   param_loader.load_param("dt", _dt_);
   param_loader.load_param("loop", _loop_, bool(false));
@@ -203,7 +249,7 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   /* sanity checks //{ */
 
   if (_offset_list_.size() != 4) {
-    ROS_ERROR("Parameter offset should be set to [x,y,z,yaw]!");
+    ROS_ERROR("Parameter offset should be set to [x,y,z,heading]!");
     ros::shutdown();
     return;
   }
