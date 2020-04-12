@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <boost/chrono/chrono_io.hpp>
 
-#include <mrs_lib/ParamLoader.h>
+#include <mrs_lib/param_loader.h>
 
 // only for UNIX
 #include <pthread.h>
@@ -73,13 +73,13 @@ TrajectoryLoader::TrajectoryLoader() {
   ROS_INFO("Loading general parameters:");
   mrs_lib::ParamLoader param_loader(_nh_);
 
-  param_loader.load_param("service_topic", _service_topic_);
-  param_loader.load_param("uav_name", _uav_name_, std::string());
-  param_loader.load_param("main/uav_name_list", _uav_name_list_);
-  param_loader.load_param("main/delay", _delay_list_);
-  param_loader.load_param("timeout_for_calling_services", _timeout_for_calling_services_, double(5));
+  param_loader.loadParam("service_topic", _service_topic_);
+  param_loader.loadParam("uav_name", _uav_name_, std::string());
+  param_loader.loadParam("main/uav_name_list", _uav_name_list_);
+  param_loader.loadParam("main/delay", _delay_list_);
+  param_loader.loadParam("timeout_for_calling_services", _timeout_for_calling_services_, double(5));
 
-  if (!param_loader.loaded_successfully()) {
+  if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("Could not load all non-optional parameters!");
     ros::shutdown();
     return;
@@ -219,12 +219,12 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   // | ------------------------- params ------------------------- |
   mrs_lib::ParamLoader param_loader(_nh_);
 
-  param_loader.load_param("use_heading", _use_heading_, bool(false));
-  param_loader.load_param("fly_now", _fly_now_, bool(false));
-  param_loader.load_param("dt", _dt_);
-  param_loader.load_param("loop", _loop_, bool(false));
-  param_loader.load_param("main/offset", _offset_list_);
-  param_loader.load_param("current_working_directory", _current_working_directory_);
+  param_loader.loadParam("use_heading", _use_heading_, bool(false));
+  param_loader.loadParam("fly_now", _fly_now_, bool(false));
+  param_loader.loadParam("dt", _dt_);
+  param_loader.loadParam("loop", _loop_, bool(false));
+  param_loader.loadParam("main/offset", _offset_list_);
+  param_loader.loadParam("current_working_directory", _current_working_directory_);
 
   string text;
   string filename;
@@ -232,15 +232,15 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   if (_uav_name_list_.size() != 1 || (_uav_name_list_.size() == 1 && _uav_name_ != _uav_name_list_[0])) {
     for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
       text = _uav_name_list_[i] + "/filename";
-      param_loader.load_param(text.c_str(), filename);
+      param_loader.loadParam(text.c_str(), filename);
       filename_array[i] = _current_working_directory_ + filename;
     }
   } else {
-    param_loader.load_param("filename", filename);
+    param_loader.loadParam("filename", filename);
     filename_array[0] = _current_working_directory_ + filename;
   }
 
-  if (!param_loader.loaded_successfully()) {
+  if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("Could not load all non-optional parameters!");
     ros::shutdown();
     return;
