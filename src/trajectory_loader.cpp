@@ -42,6 +42,7 @@ private:
   std::vector<double>      _offset_list_;
   std::vector<double>      _delay_list_;
   std::string              _service_topic_;
+  std::string              _frame_id_;
   std::vector<std::string> _uav_name_list_;
 
   std::vector<bool>                          result_info_list_;
@@ -200,6 +201,7 @@ bool TrajectoryLoader::loadTrajectoryFromFile(const string &filename, mrs_msgs::
     file_in.close();
 
     new_traj.header.stamp = ros::Time(0);
+    new_traj.header.frame_id = _frame_id_;
     new_traj.use_heading  = _use_heading_;
     new_traj.fly_now      = _fly_now_;
     new_traj.dt           = _dt_;
@@ -223,8 +225,9 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   param_loader.loadParam("fly_now", _fly_now_, bool(false));
   param_loader.loadParam("dt", _dt_);
   param_loader.loadParam("loop", _loop_, bool(false));
-  param_loader.loadParam("main/offset", _offset_list_);
+  param_loader.loadParam("frame_id", _frame_id_,std::string());
   param_loader.loadParam("current_working_directory", _current_working_directory_);
+  param_loader.loadParam("main/offset", _offset_list_);
 
   string text;
   string filename;
@@ -257,6 +260,10 @@ void TrajectoryLoader::loadMultipleTrajectories() {
   double offset_sum = _offset_list_[0] + _offset_list_[1] + _offset_list_[2] + _offset_list_[3];
   if (offset_sum > 1e-5) {
     ROS_WARN("Trajectories will be offsetted by [%.2f, %.2f, %.2f, %.2f]", _offset_list_[0], _offset_list_[1], _offset_list_[2], _offset_list_[3]);
+  }
+
+  if(_frame_id_.empty()){
+    ROS_WARN("Parameter frame_id is not set. The trajectory will be loaded in the currently used frame.");
   }
 
   /* load trajectories */
@@ -438,6 +445,7 @@ bool conflicting_options(const po::variables_map &vm, const char *opt1, const ch
 
 /* MAIN FUNCTION //{ */
 int main(int argc, char **argv) {
+
   /* Loading arguments //{ */
 
   po::options_description desc("Allowed options");
@@ -476,14 +484,18 @@ int main(int argc, char **argv) {
 
   //}
 
+  // initialize ROS
+  ros::init(argc, argv, "trajectory_loader");
+  ros::NodeHandle nh("~");
+  ros::Time::waitForValid();
+
   if (vm.count("load")) {
     ROS_INFO("-------------- trajectory_loader - set for loading trajectories -----------------");
   } else {
     ROS_INFO("-------------- trajectory_loader - set for calling trigger service -----------------");
   }
 
-  // initialize ROS
-  ros::init(argc, argv, "trajectory_loader");
+
   ROS_INFO("Node initialized.");
 
   // create class TrajectoryLoader
