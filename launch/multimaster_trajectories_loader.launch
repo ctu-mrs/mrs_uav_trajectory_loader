@@ -17,11 +17,6 @@
 
 			<param name="current_working_directory" type="string" value="$(arg current_working_directory)" />	
 			<param name="service_topic" type="string" value="control_manager/trajectory_reference" />	
-      
-      <param name="use_heading" type="bool" value="$(arg use_heading)" />
-      <param name="fly_now" type="bool" value="$(arg fly_now)" />
-      <param name="loop" type="bool" value="$(arg loop)" />
-      <param name="dt" type="double" value="$(arg dt)" />
     
     </node>
 	</group>
