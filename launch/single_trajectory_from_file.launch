@@ -12,7 +12,8 @@
 
     <node name="trajectory_loader" pkg="trajectory_loader" type="load_trajectory" args="--load" output="screen" cwd="ROS_HOME">
 
-      <param name="service_topic" type="string" value="control_manager/mpc_tracker/set_trajectory" />
+      <param name="service_topic" type="string" value="control_manager/trajectory_reference" />
+      <param name="frame_id" type="string" value="local_origin" />
 
       <param name="current_working_directory" type="string" value="$(arg current_working_directory)" />
       <param name="filename" type="string" value="$(arg file)" />
