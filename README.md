@@ -17,6 +17,24 @@ where parameters *\<folder\>* and *\<file\>* are parameters that have to be set.
 * fly_now - set if the trajectory should be followed immediately after its loading. 
 * loop - set if the trajectory is infinite. Trajectory will be then in the loop.
 
+### Sending command "Fly to start"
+
+```bash
+rosservice call /$UAV_NAME/control_manager/goto_trajectory_start
+```
+
+### Sending command "Start following"
+
+```bash
+rosservice call /$UAV_NAME/control_manager/start_trajectory_tracking
+```
+
+### Sending command "Stop following"
+
+```bash
+rosservice call /$UAV_NAME/control_manager/stop_trajectory_tracking
+```
+
 ## Commanding multiple client machines
 
 ### Prerequisites 
