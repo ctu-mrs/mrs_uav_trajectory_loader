@@ -1,4 +1,4 @@
-# Tutorial for trajectory_loader of MRS ROS system
+# UAV trajectory loader [![Build Status](https://travis-ci.com/ctu-mrs/trajectory_loader.svg?branch=master)](https://travis-ci.com/ctu-mrs/trajectory_loader)
 
 Launchfiles and config files are only examples how to use this package. It is recommended to copy them into your own package and modify them there.
 
