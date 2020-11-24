@@ -1,20 +1,23 @@
-main:
-  uav_name_list: [uav1, uav2, uav3]
-  offset: [0.0, 0.0, 0.0, 0.0]      # offset for all trajectories [x,y,z,heading]
-  delay: [0.0, 0.0, 0.0]       # delays before calling the service (in seconds)
+service:
+  timeout: 3     # maximal waiting time for response after calling service
+  load_name: "control_manager/trajectory_reference"
+  goto_name: "control_manager/goto_trajectory_start"
+  track_name: "control_manager/start_trajectory_tracking"
 
-timeout_for_calling_services: 3     # maximal waiting time for response after calling service
+trajectory:
+  # Common options to be used for all trajectories
+  frame_id: ""
+  dt: 0.2
+  delay: 0.0
+  loop: false
+  use_heading: true
+  fly_now: true
+  offset: [0.0, 0.0, 0.0, 0.0]      # [x, y, z, heading]
 
-dt: 0.2
-loop: false
-use_heading: true
-fly_now: true
-
-uav1:
-  filename: /sample_trajectory/trajectory1.txt
-
-uav2:
-  filename: /sample_trajectory/trajectory2.txt
-
-uav3:
-  filename: /sample_trajectory/trajectory3.txt
+  uavs:
+    uav1:
+      filename: "sample_trajectory/trajectory1.txt"
+    uav2: 
+      filename: "sample_trajectory/trajectory2.txt"
+    uav3:
+      filename: "sample_trajectory/trajectory3.txt"
