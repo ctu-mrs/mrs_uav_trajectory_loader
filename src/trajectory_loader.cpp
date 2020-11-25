@@ -15,7 +15,6 @@
 #include <boost/chrono/chrono_io.hpp>
 
 #include <mrs_lib/param_loader.h>
-#include <mrs_lib/vector_converter.h>
 
 //}
 
@@ -30,40 +29,38 @@ private:
 
   struct traj_cfg_t
   {
-    std::string uav_name;
-    std::vector<double> offset;
-    bool use_heading;
-    bool fly_now;
-    double dt;
-    ros::Duration delay;
-    bool loop;
-    std::string frame_id;
-    std::string service_name;
+    std::string uav_name = "";
+    std::vector<double> offset = {0,0,0,0};
+    bool use_heading = true;
+    bool fly_now = false;
+    double dt = 0.2;
+    ros::Duration delay = ros::Duration{0};
+    bool loop = false;
+    std::string frame_id = "";
+    std::string service_name = "";
   } default_traj_cfg;
 
 private:
   ros::NodeHandle _nh_;
 
-  /* trajectory parameters */
-  std::string _current_working_directory_;
-  bool        _use_heading_;  // whether to fly trajectory with desired heading
-  bool        _fly_now_;      // whether to start tracking the trajectory immediately after loading
-  bool        _loop_;         // whether to fly trajectory in loop (infinitely times)
-  double      _dt_;
-
-  /* config parameters */
-  ros::Duration            _timeout_;
-  std::string              _uav_name_;
-  std::string              _load_service_name_;
+  /* Loaded parameters */
+  ros::Duration _timeout_;
+  std::string _uav_name_;
+  std::string _load_service_name_;
+  std::string _goto_service_name_;
+  std::string _track_service_name_;
   std::vector<std::string> _uav_name_list_;
+  // Indicates whether the UAV name list is from the _uav_name_ (which is usually set dynamically using an environment variable)
+  // or loaded from the "trajectory/uavs" parameter list. If it's the first case, then the trajectory filename is loaded from
+  // parameter "trajectory/filename", else it's loaded from "trajectory/uavs/X/filename" for each UAV name X.
+  bool _dynamic_uav_name_;
 
+  /* working variables */
+  /* timers for delayed service calling */
+  std::vector<ros::Timer> timer_list_;
+  /* results of service calls will be stored here */
   std::mutex result_info_mtx_;
   std::vector<int> result_info_list_;
-  std::vector<mrs_msgs::TrajectoryReference> trajectories_list_;
-  std::vector<ros::ServiceClient>            service_client_list_;
-  
-  /* timers for asynchronous calling */
-  std::vector<ros::Timer> timer_list_;
 
   /* loadTrajectoryFromFile() method //{ */
 
@@ -77,8 +74,6 @@ private:
       ROS_ERROR("- Cannot open %s", filename.c_str());
       return std::nullopt;
     }
-
-    ROS_INFO("- Loading trajectory from %s", filename.c_str());
 
     std::string line;
     mrs_msgs::TrajectoryReference new_traj;
@@ -137,72 +132,17 @@ private:
 
   //}
 
-
-  /* serviceNameFromUav() method //{ */
-  std::string serviceNameFromUav(const std::string& uav_name)
+  /* concatServiceName() method //{ */
+  std::string concatServiceName(const std::string& uav_name, const std::string& service_name)
   {
-    return "/" + uav_name + "/" + _load_service_name_;
+    return "/" + uav_name + "/" + service_name;
   }
-  //}
-
-  /* publishTrajectory() method //{ */
-
-  // Method for publishing trajectory msg on specific service topic
-  void publishTrajectory([[maybe_unused]] const ros::TimerEvent &event, const size_t index, const mrs_msgs::TrajectoryReference &trajectory, const traj_cfg_t& cfg)
-  {
-    const std::string service_name = serviceNameFromUav(cfg.uav_name);
-    ROS_INFO("%s: Calling service: %s", cfg.uav_name.c_str(), service_name.c_str());
-
-    mrs_msgs::TrajectoryReferenceSrv srv;
-    srv.request.trajectory = trajectory;
-
-    // calling service
-    auto sc = _nh_.serviceClient<mrs_msgs::TrajectoryReferenceSrv>(service_name);
-    if (sc.call(srv))
-    {
-      // when the calling was successful and the client received response
-      if (srv.response.success)
-      {
-        if (srv.response.modified)
-          ROS_WARN("%s: %s", cfg.uav_name.c_str(), srv.response.message.c_str());
-        else
-          ROS_INFO("%s: %s", cfg.uav_name.c_str(), srv.response.message.c_str());
-      } else
-      {
-        ROS_ERROR("%s: %s", cfg.uav_name.c_str(), srv.response.message.c_str());
-      }
-    }
-    else
-    {
-      // service calling was unsuccessful because other side doesn't exist
-      ROS_ERROR("%s: Failed to call service", cfg.uav_name.c_str());
-    }
-    
-    // Finally, indicate that we are done
-    std::scoped_lock lck(result_info_mtx_);
-    result_info_list_.at(index) = true;
-  }
-
-  //}
-
-  void callServiceTrigger(const ros::TimerEvent &event, const int index);
-
-  /* timeoutFunction() method //{ */
-
-  // Method that checks results from service threads and also checks if calling doesn't take too much time
-  void timeoutFunction([[maybe_unused]] const ros::TimerEvent &event)
-  {
-  }
-
   //}
 
   /* serviceTimeoutCheck() method //{ */
   void serviceTimeoutCheck(const ros::Duration& timeout)
   {
     ROS_INFO("Main thread: Starting a %.1fs timeout.", timeout.toSec());
-    auto timer = _nh_.createTimer(timeout, boost::bind(
-            &TrajectoryLoader::timeoutFunction, this
-            ), true, true);  // the last boolean argument makes the timer run only once);
   
     const ros::Duration timestep(0.1);
     ros::Duration current_timeout(0);
@@ -210,7 +150,8 @@ private:
     ros::AsyncSpinner spinner(timer_list_.size());
     spinner.start();
   
-    while (current_timeout < timeout) {
+    while (current_timeout < timeout)
+    {
       timestep.sleep();
       current_timeout += timestep;
   
@@ -238,8 +179,152 @@ private:
   };
   //}
 
+  /* callService() method //{ */
+
+  // Method for calling service msg Trigger on specific topic
+  template<typename T>
+  void callService([[maybe_unused]] const ros::TimerEvent &event, const std::string& uav_name, const std::string& service_name_part, T srv, const size_t index)
+  {
+    const std::string service_name = concatServiceName(uav_name, service_name_part);
+    ROS_INFO("%s: Calling service: \"%s\"", uav_name.c_str(), service_name.c_str());
+
+    // calling service
+    auto sc = _nh_.serviceClient<T>(service_name);
+    if (sc.call(srv))
+    {
+      // when the calling was successful and the client received response
+      if (srv.response.success)
+      {
+        ROS_INFO("%s: %s", uav_name.c_str(), srv.response.message.c_str());
+      } else
+      {
+        ROS_ERROR("%s: %s", uav_name.c_str(), srv.response.message.c_str());
+      }
+    }
+    else
+    {
+      // service calling was unsuccessful because other side doesn't exist
+      ROS_ERROR("%s: Failed to call service", uav_name.c_str());
+    }
+    
+    // Finally, indicate that we are done
+    std::scoped_lock lck(result_info_mtx_);
+    result_info_list_.at(index) = true;
+  }
+
+  //}
+
+  /* callServiceTriggersDelayed() method //{ */
+  void callServiceTriggersDelayed(const std::string& service_name_part)
+  {
+    mrs_lib::ParamLoader param_loader(_nh_);
+  
+    // load the trajectory delays
+    const auto default_delay = param_loader.loadParam2<ros::Duration>("trajectory/delay", ros::Duration(0));
+    std::vector<ros::Duration> delay_list;
+    for (auto& uav_name : _uav_name_list_)
+    {
+      const auto delay = param_loader.loadParam2<ros::Duration>("trajectory/uavs/"+uav_name+"/delay", default_delay);
+      delay_list.push_back(delay);
+    }
+  
+    // if some of the trajectories failed to load, it's a failure, end
+    if (!param_loader.loadedSuccessfully())
+    {
+      ROS_ERROR("Failed to load some compulsory parameters. Ending.");
+      return;
+    }
+  
+    /* If all is fine so far, start the delayed loading of trajectories //{ */
+  
+    ros::Duration max_delay(0); // also use this opportunity to find the maximal delay
+    for (size_t it = 0; it < _uav_name_list_.size(); it++)
+    {
+      const auto uav_name = _uav_name_list_.at(it);
+      const auto delay = delay_list.at(it);
+      const auto fn = boost::bind(
+              &TrajectoryLoader::callService<std_srvs::Trigger>, this,
+              _1, uav_name, service_name_part, std_srvs::Trigger{}, it
+              );
+
+      result_info_list_.push_back(false);
+      timer_list_.push_back(
+          _nh_.createTimer(delay, fn, true, true));  // the last boolean argument makes the timer run only once);
+      ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", uav_name.c_str(), delay.toSec(), concatServiceName(uav_name, service_name_part).c_str());
+  
+      if (delay > max_delay)
+        max_delay = delay;
+    }
+  
+    //}
+  
+    // Start the timeout function
+    const ros::Duration timeout = max_delay + _timeout_;
+    serviceTimeoutCheck(timeout);
+  };
+  //}
+
 public:
-  TrajectoryLoader();
+  /* init() method //{ */
+
+  bool init(const std::string& mode)
+  {
+    _nh_ = ros::NodeHandle("~");
+
+    ROS_INFO("Loading general parameters:");
+    mrs_lib::ParamLoader param_loader(_nh_);
+
+    param_loader.loadParam("uav_name", _uav_name_, std::string());
+    param_loader.loadParam("service/timeout", _timeout_, ros::Duration(5.0));
+    param_loader.loadParam("service/load_name", _load_service_name_);
+    param_loader.loadParam("service/goto_name", _goto_service_name_);
+    param_loader.loadParam("service/track_name", _track_service_name_);
+    param_loader.loadParam("trajectory/dynamic_uav_name", _dynamic_uav_name_);
+
+    const auto trajs_cfgs_exist = _nh_.hasParam("trajectory/uavs");
+    std::string uav_names;
+    if (trajs_cfgs_exist && !_dynamic_uav_name_)
+    {
+      const auto trajs_cfgs = param_loader.loadParam2<XmlRpc::XmlRpcValue>("trajectory/uavs");
+      for (auto& el : trajs_cfgs)
+      {
+        _uav_name_list_.push_back(el.first);
+        uav_names += " '" + el.first + "'";
+      }
+    }
+    else
+    {
+      _uav_name_list_.push_back(_uav_name_);
+      uav_names += " only '" + _uav_name_ + "'";
+      _dynamic_uav_name_ = true; // name of the parameter, containing configuration of an uav's trajectory, "trajectory/filename"
+    }
+    if (mode == "load")
+    {
+      if (_dynamic_uav_name_)
+        uav_names += " (using UAV name \033[1;33magnostic\033[0m parameter \033[1;33m\"trajectory/filename\"\033[0m to load filename of the trajectory)";
+      else
+        uav_names += " (using UAV name \033[1;33mspecific\033[0m parameters \033[1;33m\"trajectory/uavs/<uav_name>/filename\"\033[0m to load filename of the trajectory)";
+    }
+
+    ROS_INFO("Loaded UAV names:%s", uav_names.c_str());
+
+    if (!param_loader.loadedSuccessfully())
+    {
+      ROS_ERROR("Could not load all non-optional parameters!");
+      return false;
+    }
+
+    // sanity checking
+    if (_timeout_ < ros::Duration(0))
+    {
+      ROS_ERROR("The parameter 'service/timeout' has to be positive!");
+      return false;
+    }
+
+    return true;
+  }
+
+  //}
 
   /* void loadTrajectories() method //{ */
   
@@ -263,30 +348,55 @@ public:
   
     /* First, load some common parameters //{ */
     
-    const auto current_working_directory = param_loader.loadParam2<bool>("current_working_directory" );
-    default_traj_cfg.uav_name = _uav_name_;
-    default_traj_cfg.dt = 0.2;
+    ROS_INFO("- Loading common trajectory parameters");
+    const auto trajectories_path = param_loader.loadParam2<std::string>("trajectories_path");
     const auto cfg_common = load_traj_cfg(param_loader, "trajectory", default_traj_cfg);
     
     //}
 
     /* Load all the trajectories and their optional configurations //{ */
+    // First, load filenames of the trajectories
+    std::vector<std::string> traj_fnames;
+    if (_dynamic_uav_name_)
+    // if the UAV name is dynamic, load the "trajectory/filename" parameter (which is independent of UAV name)
+    {
+      traj_fnames.push_back(param_loader.loadParam2<std::string>("trajectory/filename"));
+    }
+    else
+    // otherwise, load the names from the static "trajectory/uavs/uav_name/filename" parameters
+    {
+      for (auto& uav_name : _uav_name_list_)
+        traj_fnames.push_back(param_loader.loadParam2<std::string>("trajectory/uavs/"+uav_name+"/filename"));
+    }
+
+    // Check that we've gotten everything we needed
+    if (!param_loader.loadedSuccessfully())
+    {
+      ROS_ERROR("Failed to load some compulsory parameters. Ending.");
+      return;
+    }
     
     bool all_trajs_loaded = true;
-    std::vector<std::pair<mrs_msgs::TrajectoryReference, traj_cfg_t>> loaded_trajs;
-    for (auto& uav_name : _uav_name_list_)
+    std::vector<mrs_msgs::TrajectoryReference> loaded_trajs;
+    std::vector<ros::Duration> traj_delays;
+    for (size_t it = 0; it < _uav_name_list_.size(); it++)
     {
+      const auto& uav_name = _uav_name_list_.at(it);
+      const auto& traj_fname = traj_fnames.at(it);
+      const auto pathfname = trajectories_path + "/" + traj_fname;
+      ROS_INFO("- Loading trajectory for UAV \033[1;33m\"%s\"\033[0m from \033[1;33m\"%s\"\033[0m", uav_name.c_str(), pathfname.c_str());
+
       auto cfg = load_traj_cfg(param_loader, "trajectory/uavs/"+uav_name, cfg_common);
-    
-      const auto traj_fname = param_loader.loadParam2<std::string>("trajectory/uavs/"+uav_name+"/filename");
-      const auto msg_opt = loadTrajectoryFromFile(traj_fname, cfg);
+      cfg.uav_name = uav_name;
+      const auto msg_opt = loadTrajectoryFromFile(pathfname, cfg);
       if (!msg_opt)
       {
         all_trajs_loaded = false;
         break;
       }
     
-      loaded_trajs.push_back({msg_opt.value(), cfg});
+      loaded_trajs.push_back(msg_opt.value());
+      traj_delays.push_back(cfg.delay);
     }
     
     //}
@@ -302,20 +412,26 @@ public:
     /* If all is fine so far, start the delayed loading of trajectories //{ */
     
     ros::Duration max_delay(0); // also use this opportunity to find the maximal delay
-    for (size_t it = 0; it < loaded_trajs.size(); it++)
+    for (size_t it = 0; it < _uav_name_list_.size(); it++)
     {
-      const auto& [msg, cfg] = loaded_trajs.at(it);
+      const auto& uav_name = _uav_name_list_.at(it);
+      const auto& delay = traj_delays.at(it);
+      const auto& msg = loaded_trajs.at(it);
+
+      mrs_msgs::TrajectoryReferenceSrv srv;
+      srv.request.trajectory = msg;
+      const auto fn = boost::bind(
+              &TrajectoryLoader::callService<mrs_msgs::TrajectoryReferenceSrv>, this,
+              _1, uav_name, _load_service_name_, srv, it
+              );
+
       result_info_list_.push_back(false);
       timer_list_.push_back(
-          _nh_.createTimer(cfg.delay, boost::bind(
-              &TrajectoryLoader::publishTrajectory, this,
-              _1, _2,  _3,
-              it, msg, cfg
-              ), true, true));  // the last boolean argument makes the timer run only once);
-      ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", cfg.uav_name.c_str(), cfg.delay.toSec(), serviceNameFromUav(cfg.uav_name).c_str());
+          _nh_.createTimer(delay, fn, true, true));  // the last boolean argument makes the timer run only once);
+      ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", uav_name.c_str(), delay.toSec(), concatServiceName(uav_name, _load_service_name_).c_str());
     
-      if (cfg.delay > max_delay)
-        max_delay = cfg.delay;
+      if (delay > max_delay)
+        max_delay = delay;
     }
     
     //}
@@ -329,130 +445,16 @@ public:
 
   void gotoStart()
   {
-    string topic;
-    ros::ServiceClient sc;
-    for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-      topic = "/" + _uav_name_list_[i] + "/" + _service_topic_;
-      sc    = _nh_.serviceClient<std_srvs::Trigger>(topic.c_str());
-      service_client_list_.push_back(sc);
-      result_info_list_.push_back(false);
-    }
-
-    /* call services using individual threads */
-    for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) {
-      if (_delay_list_[i] > 1e-3) {
-        ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[i].c_str(), _delay_list_[i],
-                 service_client_list_[i].getService().c_str());
-      }
-      timer_list_.push_back(_nh_.createTimer(ros::Duration(_delay_list_[i]), boost::bind(&TrajectoryLoader::callServiceTrigger, this, _1, i), true,
-                                              true));  // the last boolean argument makes the timer run only once);
-    }
-
-    // Start the timeout function
-    const ros::Duration timeout = max_delay + _timeout_;
-    serviceTimeoutCheck(timeout);
+    callServiceTriggersDelayed(_goto_service_name_);
   };
 
-  void startTracking() {};
+  void startTracking()
+  {
+    callServiceTriggersDelayed(_track_service_name_);
+  };
 };
 
 //}
-
-/* TrajectoryLoader::TrajectoryLoader() //{ */
-
-TrajectoryLoader::TrajectoryLoader() {
-  _nh_ = ros::NodeHandle("~");
-
-  ROS_INFO("Loading general parameters:");
-  mrs_lib::ParamLoader param_loader(_nh_);
-
-  param_loader.loadParam("uav_name", _uav_name_, std::string());
-  param_loader.loadParam("service/timeout", _timeout_, ros::Duration(5.0));
-  param_loader.loadParam("service/load_name", _load_service_name_);
-  param_loader.loadParam("service/goto_name", _load_service_name_);
-
-  const auto trajs_cfgs = param_loader.loadParam2<XmlRpc::XmlRpcValue>("trajectory/uavs", {});
-  for (auto& el : trajs_cfgs)
-    _uav_name_list_.push_back(el.first); // name of the parameter, containing configuration of an uav's trajectory, is the uav's name
-
-  if (!param_loader.loadedSuccessfully()) {
-    ROS_ERROR("Could not load all non-optional parameters!");
-    ros::shutdown();
-    return;
-  }
-
-  // sanity checking
-  if (_timeout_ < ros::Duration(0))
-  {
-    ROS_ERROR("The parameter 'service/timeout' has to be positive!");
-    ros::shutdown();
-    return;
-  }
-}
-
-//}
-
-/* /1* TrajectoryLoader::loadMultipleTrajectories() //{ *1/ */
-
-/* // Main method for loading trajectories. This method creates independent thread for each uav. */
-/* void TrajectoryLoader::loadMultipleTrajectories() */ 
-
-/* //} */
-
-/* /1* TrajectoryLoader::callMultipleServiceTriggers() //{ *1/ */
-
-/* // Main method for calling Trigger service. This method creates independent thread for each calling. */
-/* void TrajectoryLoader::callMultipleServiceTriggers() { */
-
-/*   // | ------------------------ services ------------------------ | */
-/*   string             topic; */
-/*   ros::ServiceClient sc; */
-/*   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) { */
-/*     topic = "/" + _uav_name_list_[i] + "/" + _service_topic_; */
-/*     sc    = _nh_.serviceClient<std_srvs::Trigger>(topic.c_str()); */
-/*     service_client_list_.push_back(sc); */
-/*     result_info_list_.push_back(false); */
-/*   } */
-
-/*   /1* call services using individual threads *1/ */
-/*   for (unsigned long i = 0; i < _uav_name_list_.size(); ++i) { */
-/*     if (_delay_list_[i] > 1e-3) { */
-/*       ROS_INFO("%s: Sleeping for %.1f s before calling service \"%s\"", _uav_name_list_[i].c_str(), _delay_list_[i], */
-/*                service_client_list_[i].getService().c_str()); */
-/*     } */
-/*     timer_list_.push_back(_nh_.createTimer(ros::Duration(_delay_list_[i]), boost::bind(&TrajectoryLoader::callServiceTrigger, this, _1, i), true, */
-/*                                             true));  // the last boolean argument makes the timer run only once); */
-/*   } */
-
-/*   /1* timeout for threads *1/ */
-/*   timeoutFunction(); */
-/* } */
-
-/* //} */
-
-/* /1* TrajectoryLoader::callServiceTrigger() //{ *1/ */
-
-/* // Method for calling service msg Trigger on specific topic */
-/* void TrajectoryLoader::callServiceTrigger([[maybe_unused]] const ros::TimerEvent &event, const int index) { */
-/*   ROS_INFO("%s: Calling service: %s", _uav_name_list_[index].c_str(), service_client_list_[index].getService().c_str()); */
-
-/*   std_srvs::Trigger srv; */
-/*   // calling service */
-/*   if (service_client_list_[index].call(srv)) { */
-/*     // when the calling was successful and the client received response */
-/*     if (srv.response.success) { */
-/*       ROS_INFO("%s: %s", _uav_name_list_[index].c_str(), srv.response.message.c_str()); */
-/*     } else { */
-/*       ROS_ERROR("%s: %s", _uav_name_list_[index].c_str(), srv.response.message.c_str()); */
-/*     } */
-/*     // service calling was unsuccessful because other side doesn't exist */
-/*   } else { */
-/*     ROS_ERROR("%s: Failed to call service", _uav_name_list_[index].c_str()); */
-/*   } */
-/*   result_info_list_.at(index) = true; */
-/* } */
-
-/* //} */
 
 /* MAIN FUNCTION //{ */
 int main(int argc, char **argv) {
@@ -472,15 +474,18 @@ int main(int argc, char **argv) {
   // create class TrajectoryLoader
   TrajectoryLoader trajectory_loader;
 
+  if (!trajectory_loader.init(mode))
+    return 1;
+
   if (mode == "load")
     trajectory_loader.loadTrajectories();
-  else if (mode == "flyto")
-    trajectory_loader.flyToStart();
+  else if (mode == "goto")
+    trajectory_loader.gotoStart();
   else if (mode == "track")
     trajectory_loader.startTracking();
   else
   {
-    ROS_ERROR(" Unknown mode: '%s'! Valid options are 'load' or 'start'.", mode.c_str());
+    ROS_ERROR("Unknown mode: '%s'! Valid options are 'load', 'goto' and 'track'.", mode.c_str());
     return 1;
   }
   ros::shutdown();

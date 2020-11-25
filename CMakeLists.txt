@@ -12,9 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   mrs_lib
 )
 
-find_package(Boost COMPONENTS program_options thread REQUIRED)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fno-diagnostics-color")
+add_compile_options("-std=c++17")
+add_compile_options("-Wall")
 
 catkin_package()
 
@@ -25,14 +24,12 @@ catkin_package()
 include_directories(
   # include
   ${catkin_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a C++ executable
-add_executable(load_trajectory src/trajectory_loader.cpp)
-add_dependencies(load_trajectory ${catkin_EXPORTED_TARGETS})
-target_link_libraries(load_trajectory
+add_executable(trajectory_loader src/trajectory_loader.cpp)
+add_dependencies(trajectory_loader ${catkin_EXPORTED_TARGETS})
+target_link_libraries(trajectory_loader
   ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
   )
 

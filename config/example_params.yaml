@@ -1,0 +1,24 @@
+trajectory:
+  # Common options to be used for all trajectories (these are the default values, so you can omit them in this case).
+  frame_id: ""
+  dt: 0.2
+  delay: 0.0
+  loop: false
+  use_heading: true
+  fly_now: false
+  offset: [0.0, 0.0, 0.0, 0.0]      # [x, y, z, heading]
+
+  # If 'dynamic_uav_name' is true, the 'uavs' parameter is ignored and trajectory is loaded
+  # to the UAV, specified by the 'uav_name' parameter from the 'trajectory/filename' parameter.
+  # This allows for UAV name-agnostic trajectory loading (it doesn't need to be specified in
+  # the yaml and can be loaded eg. from an environment variable.
+  dynamic_uav_name: false
+  # Options specified here will override the common options above.
+  uavs:
+    uav1:
+      filename: "sample_trajectories/trajectory1.txt"
+    uav2: 
+      filename: "sample_trajectories/trajectory2.txt"
+      offset: [0.0, 0.0, 3.0, 0.0]      # [x, y, z, heading]
+    uav3:
+      filename: "sample_trajectories/trajectory3.txt"
