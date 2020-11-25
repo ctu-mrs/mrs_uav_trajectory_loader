@@ -49,6 +49,7 @@ private:
   std::string _load_service_name_;
   std::string _goto_service_name_;
   std::string _track_service_name_;
+  std::string _stop_service_name_;
   std::vector<std::string> _uav_name_list_;
   // Indicates whether the UAV name list is from the _uav_name_ (which is usually set dynamically using an environment variable)
   // or loaded from the "trajectory/uavs" parameter list. If it's the first case, then the trajectory filename is loaded from
@@ -279,6 +280,7 @@ public:
     param_loader.loadParam("service/load_name", _load_service_name_);
     param_loader.loadParam("service/goto_name", _goto_service_name_);
     param_loader.loadParam("service/track_name", _track_service_name_);
+    param_loader.loadParam("service/stop_name", _stop_service_name_);
     param_loader.loadParam("trajectory/dynamic_uav_name", _dynamic_uav_name_);
 
     const auto trajs_cfgs_exist = _nh_.hasParam("trajectory/uavs");
@@ -349,7 +351,7 @@ public:
     /* First, load some common parameters //{ */
     
     ROS_INFO("- Loading common trajectory parameters");
-    const auto trajectories_path = param_loader.loadParam2<std::string>("trajectories_path");
+    const auto base_path = param_loader.loadParam2<std::string>("trajectory/base_path");
     const auto cfg_common = load_traj_cfg(param_loader, "trajectory", default_traj_cfg);
     
     //}
@@ -383,7 +385,7 @@ public:
     {
       const auto& uav_name = _uav_name_list_.at(it);
       const auto& traj_fname = traj_fnames.at(it);
-      const auto pathfname = trajectories_path + "/" + traj_fname;
+      const auto pathfname = base_path + "/" + traj_fname;
       ROS_INFO("- Loading trajectory for UAV \033[1;33m\"%s\"\033[0m from \033[1;33m\"%s\"\033[0m", uav_name.c_str(), pathfname.c_str());
 
       auto cfg = load_traj_cfg(param_loader, "trajectory/uavs/"+uav_name, cfg_common);
@@ -452,6 +454,11 @@ public:
   {
     callServiceTriggersDelayed(_track_service_name_);
   };
+
+  void stopTracking()
+  {
+    callServiceTriggersDelayed(_stop_service_name_);
+  };
 };
 
 //}
@@ -483,9 +490,11 @@ int main(int argc, char **argv) {
     trajectory_loader.gotoStart();
   else if (mode == "track")
     trajectory_loader.startTracking();
+  else if (mode == "stop")
+    trajectory_loader.stopTracking();
   else
   {
-    ROS_ERROR("Unknown mode: '%s'! Valid options are 'load', 'goto' and 'track'.", mode.c_str());
+    ROS_ERROR("Unknown mode: '%s'! Valid options are 'load', 'goto', 'track' and 'stop'.", mode.c_str());
     return 1;
   }
   ros::shutdown();

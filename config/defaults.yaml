@@ -3,3 +3,4 @@ service:
   load_name: "control_manager/trajectory_reference"
   goto_name: "control_manager/goto_trajectory_start"
   track_name: "control_manager/start_trajectory_tracking"
+  stop_name: "control_manager/stop_trajectory_tracking"
