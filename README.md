@@ -1,4 +1,7 @@
-# UAV trajectory loader [![Build Status](https://travis-ci.com/ctu-mrs/trajectory_loader.svg?branch=master)](https://travis-ci.com/ctu-mrs/trajectory_loader)
+# UAV trajectory loader
+
+| Build status | [![Build Status](https://github.com/ctu-mrs/trajectory_loader/workflows/Melodic/badge.svg)](https://github.com/ctu-mrs/trajectory_loader/actions) | [![Build Status](https://github.com/ctu-mrs/trajectory_loader/workflows/Noetic/badge.svg)](https://github.com/ctu-mrs/mrs_simulation/actions) |
+|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
 
 Launchfiles and config files are only examples how to use this package. It is recommended to copy them into your own package and modify them there.
 
@@ -14,7 +17,7 @@ where parameters *\<folder\>* and *\<file\>* are parameters that have to be set.
 * offset - offset for the whole trajectory [x,y,z,yaw].
 * delay - sleep before loading the trajectory.
 * use_yaw - set if the yaw controller should follow the predefined yaw angle in the trajectory.
-* fly_now - set if the trajectory should be followed immediately after its loading. 
+* fly_now - set if the trajectory should be followed immediately after its loading.
 * loop - set if the trajectory is infinite. Trajectory will be then in the loop.
 
 ### Sending command "Fly to start"
@@ -37,7 +40,7 @@ rosservice call /$UAV_NAME/control_manager/stop_trajectory_tracking
 
 ## Commanding multiple client machines
 
-### Prerequisites 
+### Prerequisites
 
 Setting which UAVs are targets and also which trajectories should be loaded is defined in config file */config/params.yaml*.
 Parameter *uav_name_list* is array of target UAVs (for example - [uav1, uav2, uav3]).
