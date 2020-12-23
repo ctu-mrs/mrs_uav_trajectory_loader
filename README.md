@@ -1,4 +1,7 @@
-# UAV trajectory loader [![Build Status](https://travis-ci.com/ctu-mrs/trajectory_loader.svg?branch=master)](https://travis-ci.com/ctu-mrs/trajectory_loader)
+# UAV trajectory loader
+
+| Build status | [![Build Status](https://github.com/ctu-mrs/trajectory_loader/workflows/Melodic/badge.svg)](https://github.com/ctu-mrs/trajectory_loader/actions) | [![Build Status](https://github.com/ctu-mrs/trajectory_loader/workflows/Noetic/badge.svg)](https://github.com/ctu-mrs/trajectory_loader/actions) |
+|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
 
 Launchfiles and config files are only examples how to use this package. It is recommended to copy them into your own package and modify them there.
 
@@ -60,7 +63,7 @@ Note that if the `trajectory/delay` parameter is specified, the *stop* command w
 
 ## Commanding multiple client machines
 
-### Prerequisites 
+### Prerequisites
 
 Setting which UAVs are targets and also which trajectories should be loaded has to be defined in a config file (see `/config/example_params.yaml` for an example).
 The parameter `trajectory/uavs` sets the specific options for the different UAVs.
