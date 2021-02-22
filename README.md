@@ -93,9 +93,9 @@ or create your own launchfile similar to `load.launch` and use that one.
 
 Use the command
 ```bash
-roslaunch trajectory_handler goto.launch config:=<path_to_your_trajectories_config>
+roslaunch trajectory_handler goto_start.launch config:=<path_to_your_trajectories_config>
 ```
-or create your own launchfile similar to `goto.launch` and use that one.
+or create your own launchfile similar to `goto_start.launch` and use that one.
 
 ### Sending command "Start tracking"
 
