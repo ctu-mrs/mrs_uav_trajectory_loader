@@ -11,7 +11,7 @@ Launchfiles and config files are only examples how to use this package. It is re
 
 Loading is done by calling:
 ```bash
-roslaunch trajectory_handler single_uav.launch path:=<folder> file:=<file>
+roslaunch trajectory_loader single_uav.launch path:=<folder> file:=<file>
 ```
 where parameters *\<folder\>* and *\<file\>* are the absolute path and filename of the trajectory file.
 Furthermore, these parameters of the trajectory can be set by modifying the launch file:
@@ -33,7 +33,7 @@ rosservice call /$UAV_NAME/control_manager/goto_trajectory_start
 ```
 or use `trajectory_loader`:
 ```bash
-roslaunch trajectory_handler single_uav.launch mode:=goto
+roslaunch trajectory_loader single_uav.launch mode:=goto
 ```
 Note that if the `trajectory/delay` parameter is specified, the *goto* command will be delayed. You can disable this by setting `trajectory/delay` to zero.
 
@@ -45,7 +45,7 @@ rosservice call /$UAV_NAME/control_manager/start_trajectory_tracking
 ```
 or use `trajectory_loader`:
 ```bash
-roslaunch trajectory_handler single_uav.launch mode:=track
+roslaunch trajectory_loader single_uav.launch mode:=track
 ```
 Note that if the `trajectory/delay` parameter is specified, the *track* command will be delayed. You can disable this by setting `trajectory/delay` to zero.
 
@@ -57,7 +57,7 @@ rosservice call /$UAV_NAME/control_manager/stop_trajectory_tracking
 ```
 or use `trajectory_loader`:
 ```bash
-roslaunch trajectory_handler single_uav.launch mode:=stop
+roslaunch trajectory_loader single_uav.launch mode:=stop
 ```
 Note that if the `trajectory/delay` parameter is specified, the *stop* command will be delayed. You can disable this by setting `trajectory/delay` to zero.
 
@@ -85,7 +85,7 @@ To have correctly set multimaster net using package `multimaster_fkie` or `nimbr
 
 Loading is done by calling
 ```bash
-roslaunch trajectory_handler load.launch config:=<path_to_your_trajectories_config>
+roslaunch trajectory_loader load.launch config:=<path_to_your_trajectories_config>
 ```
 or create your own launchfile similar to `load.launch` and use that one.
 
@@ -93,7 +93,7 @@ or create your own launchfile similar to `load.launch` and use that one.
 
 Use the command
 ```bash
-roslaunch trajectory_handler goto_start.launch config:=<path_to_your_trajectories_config>
+roslaunch trajectory_loader goto_start.launch config:=<path_to_your_trajectories_config>
 ```
 or create your own launchfile similar to `goto_start.launch` and use that one.
 
@@ -101,7 +101,7 @@ or create your own launchfile similar to `goto_start.launch` and use that one.
 
 Use the command
 ```bash
-roslaunch trajectory_handler start_tracking.launch config:=<path_to_your_trajectories_config>
+roslaunch trajectory_loader start_tracking.launch config:=<path_to_your_trajectories_config>
 ```
 or create your own launchfile similar to `start_tracking.launch` and use that one.
 
