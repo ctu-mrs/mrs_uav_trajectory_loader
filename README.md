@@ -1,7 +1,7 @@
 # UAV trajectory loader
 
-| Build status | [![Build Status](https://github.com/ctu-mrs/trajectory_loader/workflows/Melodic/badge.svg)](https://github.com/ctu-mrs/trajectory_loader/actions) | [![Build Status](https://github.com/ctu-mrs/trajectory_loader/workflows/Noetic/badge.svg)](https://github.com/ctu-mrs/trajectory_loader/actions) |
-|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| Build status | [![Build Status](https://github.com/ctu-mrs/trajectory_loader/workflows/Noetic/badge.svg)](https://github.com/ctu-mrs/trajectory_loader/actions) |
+|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
 
 Launchfiles and config files are only examples how to use this package. It is recommended to copy them into your own package and modify them there.
 
