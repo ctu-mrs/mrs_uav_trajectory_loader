@@ -2,12 +2,12 @@
 
   <arg name="uav_name" default="$(optenv UAV_NAME uav)"/>
   <arg name="mode" default="load"/>
-  <arg name="path" default="$(find trajectory_loader)"/>
+  <arg name="path" default="$(find mrs_uav_trajectory_loader)"/>
   <arg name="file" default="sample_trajectories/trajectory1.txt"/>
 
 	<group ns="$(arg uav_name)">
-		<node name="trajectory_loader" pkg="trajectory_loader" type="trajectory_loader" output="screen" >
-      <rosparam file="$(find trajectory_loader)/config/defaults.yaml" />
+		<node name="trajectory_loader" pkg="mrs_uav_trajectory_loader" type="trajectory_loader" output="screen" >
+      <rosparam file="$(find mrs_uav_trajectory_loader)/config/defaults.yaml" />
 			<param name="uav_name" type="string" value="$(arg uav_name)" />	
       <param name="mode" type="string" value="$(arg mode)" />
     
