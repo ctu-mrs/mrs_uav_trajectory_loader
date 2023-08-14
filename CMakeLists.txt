@@ -22,7 +22,7 @@ set(EXECUTABLES
   )
 
 catkin_package(
-  DEPENDS ${CATKIN_DEPENDENCIES}
+  CATKIN_DEPENDS ${CATKIN_DEPENDENCIES}
   )
 
 include_directories(
