@@ -1,12 +1,17 @@
-cmake_minimum_required(VERSION 3.1.2)
-project(trajectory_loader)
+cmake_minimum_required(VERSION 3.5)
+project(mrs_uav_trajectory_loader)
 
-find_package(catkin REQUIRED COMPONENTS
+set(CATKIN_DEPENDENCIES
+  cmake_modules
   mrs_msgs
   roscpp
   rospy
   std_msgs
   mrs_lib
+  )
+
+find_package(catkin REQUIRED COMPONENTS
+  ${CATKIN_DEPENDENCIES}
   )
 
 set(CMAKE_CXX_STANDARD 17)
@@ -16,7 +21,9 @@ set(EXECUTABLES
   trajectory_loader
   )
 
-catkin_package()
+catkin_package(
+  CATKIN_DEPENDS ${CATKIN_DEPENDENCIES}
+  )
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
@@ -45,9 +52,4 @@ install(TARGETS ${EXECUTABLES}
 
 install(DIRECTORY launch config sample_trajectories
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  )
-
-install(DIRECTORY ./
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  FILES_MATCHING PATTERN "*.xml"
   )
