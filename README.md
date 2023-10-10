@@ -1,13 +1,17 @@
-# UAV trajectory loader
+# MRS UAV trajectory loader
 
-| Build status | [![Build Status](https://github.com/ctu-mrs/trajectory_loader/workflows/Noetic/badge.svg)](https://github.com/ctu-mrs/trajectory_loader/actions) |
-|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+Package for loading trajectories from a CSV file into the control manager.
 
-Launchfiles and config files are only examples how to use this package. It is recommended to copy them into your own package and modify them there.
+> :warning: **Attention please: This README is outdated.**
+>
+> The MRS UAV System 1.5 is being released and this page needs updating. Please, keep in mind that the information on this page might not be valid.
+
+Launchfiles and config files in this package are only examples.
+It is recommended to copy them into your own package and modify them there.
 
 ## Commanding single client machines
 
-### Load trajectory into MPC tracker from CSV or SSV file
+### Load trajectory into Control Manager from CSV or SSV file
 
 Loading is done by calling:
 ```bash
@@ -76,12 +80,14 @@ UAV names will then be automatically deduced from what is filled in `trajectory/
 This is useful when loading a trajectories for a multiple UAVs with set names.
 
 ### For simulations via LAN
+
 Follow to [how to set ros remote](https://mrs.felk.cvut.cz/gitlab/uav/uav_core/wikis/ros_remote) page.
 
 ### For real UAV
-To have correctly set multimaster net using package `multimaster_fkie` or `nimbro_network`. (Usually it is already prepared).
 
-### Load trajectories into MPC tracker from CSV or SSV files
+TODO write what needs to be set up for enabling wireless communication with the UAV (ROS remote, Nimbro Network).
+
+### Load trajectories into Control Manager from CSV or SSV files
 
 Loading is done by calling
 ```bash
@@ -104,4 +110,3 @@ Use the command
 roslaunch trajectory_loader start_tracking.launch config:=<path_to_your_trajectories_config>
 ```
 or create your own launchfile similar to `start_tracking.launch` and use that one.
-
