@@ -1,7 +1,8 @@
 <launch>
  	
 	<arg name="uav_name" default="$(optenv UAV_NAME uav)"/>
-  <arg name="config" default="$(find mrs_uav_trajectory_loader)/config/example_params.yaml"/>
+  <arg name="config_file" default="example_params.yaml"/>
+  <arg name="config" default="$(find mrs_uav_trajectory_loader)/config/$(arg config_file).yaml"/>
   <arg name="path" default="$(find mrs_uav_trajectory_loader)"/>
 
   <arg name="debug" default="false" />

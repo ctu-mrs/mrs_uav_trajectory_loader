@@ -3,7 +3,7 @@ trajectory:
   frame_id: ""
   dt: 0.2
   delay: 0.0
-  loop: false
+  loop: true
   use_heading: true
   fly_now: false
   offset: [0.0, 0.0, 0.0, 0.0]      # [x, y, z, heading]
@@ -16,7 +16,9 @@ trajectory:
   # Options specified here will override the common options above.
   uavs:
     uav1:
-      filename: "sample_trajectories/trajectory1.txt"
+      filename: "custom_trajectories/side_to_side.csv"
     uav2: 
-      filename: "sample_trajectories/trajectory2.txt"
-      #offset: [0.0, 0.0, 0.0, 0.0]      # [x, y, z, heading]
+      filename: "custom_trajectories/base.csv"
+      offset: [0.0, -4.0, 0.0, 0.0] 
+      #offset: [2.1, -4.0, 0.0, 0.0] 
+

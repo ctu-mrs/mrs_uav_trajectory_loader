@@ -16,7 +16,7 @@ trajectory:
   # Options specified here will override the common options above.
   uavs:
     uav1:
-      filename: "sample_trajectories/trajectory1.txt"
+      filename: "custom_trajectories/sinus.csv"
     uav2: 
-      filename: "sample_trajectories/trajectory2.txt"
-      #offset: [0.0, 0.0, 0.0, 0.0]      # [x, y, z, heading]
+      filename: "custom_trajectories/base.csv"
+      offset: [0.0, -4.0, 0.0, 0.0] 
