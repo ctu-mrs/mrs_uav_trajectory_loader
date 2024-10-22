@@ -285,7 +285,6 @@ public:
 
     const auto trajs_cfgs_exist = _nh_.hasParam("trajectory/uavs");
     std::string uav_names;
-    ROS_INFO("%d %d",trajs_cfgs_exist,_dynamic_uav_name_);
     if (trajs_cfgs_exist && !_dynamic_uav_name_)
     {
       const auto trajs_cfgs = param_loader.loadParam2<XmlRpc::XmlRpcValue>("trajectory/uavs");

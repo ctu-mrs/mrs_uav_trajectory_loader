@@ -19,4 +19,6 @@ trajectory:
       filename: "sample_trajectories/trajectory1.txt"
     uav2: 
       filename: "sample_trajectories/trajectory2.txt"
-      #offset: [0.0, 0.0, 0.0, 0.0]      # [x, y, z, heading]
+      offset: [0.0, 0.0, 3.0, 0.0]      # [x, y, z, heading]
+    uav3:
+      filename: "sample_trajectories/trajectory3.txt"
