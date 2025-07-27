@@ -1,0 +1,5 @@
+trajectory:
+  file: "/root/ros2_ws/src/mrs_uav_trajectory_loader/sample_trajectories/trajectory2.txt"
+  frame_id: ""
+service:
+  load_name: "/uav1/control_manager/trajectory_reference"

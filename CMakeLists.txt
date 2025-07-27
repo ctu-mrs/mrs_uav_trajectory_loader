@@ -1,55 +1,72 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(mrs_uav_trajectory_loader)
 
-set(CATKIN_DEPENDENCIES
-  cmake_modules
-  mrs_msgs
-  roscpp
-  rospy
-  std_msgs
-  mrs_lib
-  )
-
-find_package(catkin REQUIRED COMPONENTS
-  ${CATKIN_DEPENDENCIES}
-  )
-
-set(CMAKE_CXX_STANDARD 17)
+# C++20 (matching path_loader)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(EXECUTABLES
-  trajectory_loader
-  )
+# Compiler warnings
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra)
+endif()
 
-catkin_package(
-  CATKIN_DEPENDS ${CATKIN_DEPENDENCIES}
-  )
+# ---------------- Dependencies ----------------
+set(DEPENDENCIES
+  rclcpp
+  rclcpp_components
+  mrs_msgs
+  std_srvs
+  mrs_lib
+)
 
+foreach(dep IN LISTS DEPENDENCIES)
+  find_package(${dep} REQUIRED)
+endforeach()
+
+# ---------------- Include dirs ----------------
 include_directories(
-  ${catkin_INCLUDE_DIRS}
-  )
+  include
+  ${mrs_lib_INCLUDE_DIRS}    # ensure mrs_lib headers
+)
 
-## Declare a C++ executable
-add_executable(trajectory_loader
+# ---------------- Build ----------------
+add_library(trajectory_loader_component SHARED
   src/trajectory_loader.cpp
-  )
+)
 
-add_dependencies(trajectory_loader
-  ${catkin_EXPORTED_TARGETS}
-  )
+target_include_directories(trajectory_loader_component PUBLIC
+  include
+  ${mrs_lib_INCLUDE_DIRS}
+)
 
-target_link_libraries(trajectory_loader
-  ${catkin_LIBRARIES}
-  )
+ament_target_dependencies(trajectory_loader_component
+  ${DEPENDENCIES}
+)
 
-## --------------------------------------------------------------
-## |                           Install                          |
-## --------------------------------------------------------------
+# register as component and add standalone executable
+rclcpp_components_register_node(
+  trajectory_loader_component
+  PLUGIN "mrs_uav_trajectory_loader::TrajectoryLoaderNode"
+  EXECUTABLE trajectory_loader_node_component
+)
 
-install(TARGETS ${EXECUTABLES}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
+# ---------------- Install ---------------------
+install(
+  TARGETS trajectory_loader_component trajectory_loader_node_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
 
-install(DIRECTORY launch config sample_trajectories
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  )
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+install(
+  DIRECTORY launch config
+  sample_trajectories
+  DESTINATION share/${PROJECT_NAME}
+)
+
+ament_package()

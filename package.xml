@@ -1,25 +1,17 @@
 <?xml version="1.0"?>
-<package format="2">
-
+<package format="3">
   <name>mrs_uav_trajectory_loader</name>
-  <version>1.0.0</version>
-  <description>A package for loading trajectories and calling multiple trigger messages.</description>
-
-  <author email="vojtech.spurny@fel.cvut.cz">Vojta Spurny</author>
-  <maintainer email="vojtech.spurny@fel.cvut.cz">Tomas Baca</maintainer>
-
-  <license>MIT</license>
-
-  <buildtool_depend>catkin</buildtool_depend>
-
-  <depend>cmake_modules</depend>
+  <version>0.0.1</version>
+  <description>Minimal ROS2 trajectory loader as a component.</description>
+  <maintainer email="you@example.com">You</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>mrs_msgs</depend>
-  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
   <depend>mrs_lib</depend>
-  <depend>roscpp</depend>
-  <depend>rospy</depend>
-
   <export>
+    <build_type>ament_cmake</build_type>
   </export>
-
 </package>
