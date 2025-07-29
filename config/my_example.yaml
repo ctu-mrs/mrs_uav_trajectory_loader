@@ -1,5 +1,15 @@
 trajectory:
-  file: "/root/ros2_ws/src/mrs_uav_trajectory_loader/sample_trajectories/trajectory2.txt"
+  mode: load
+  file: "/root/ros2_ws/src/mrs_uav_trajectory_loader/sample_trajectories/eight_8ms.txt"
   frame_id: ""
+  use_heading: true
+  fly_now: true         
+  dt: 0.2
+  loop: false
+  offset: [0.0, 0.0, 0.0, 0.0]
+
 service:
   load_name: "/uav1/control_manager/trajectory_reference"
+  goto_name: "/uav1/control_manager/goto_trajectory_start"
+  track_name: "/uav1/control_manager/start_trajectory_tracking"
+  stop_name: "/uav1/control_manager/stop_trajectory_tracking"
