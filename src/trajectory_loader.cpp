@@ -1,136 +1,259 @@
-#include "mrs_uav_trajectory_loader/trajectory_loader.hpp"
 #include <fstream>
-#include <boost/algorithm/string.hpp>
-#include <std_srvs/srv/trigger.hpp>
+#include <mrs_lib/node.h>
+#include <mrs_lib/param_loader.h>
+#include <mrs_lib/service_client_handler.h>
+#include <mrs_msgs/srv/trajectory_reference_srv.hpp>
+#include <optional>
+#include <string_view>
+#include <vector>
 
 namespace mrs_uav_trajectory_loader {
 
-TrajectoryLoaderNode::TrajectoryLoaderNode(const rclcpp::NodeOptions & opts)
-: rclcpp::Node("trajectory_loader", opts)
-{
-  init_timer_ = this->create_wall_timer(
-    std::chrono::milliseconds(0),
-    std::bind(&TrajectoryLoaderNode::onInit, this)
-  );
-}
+class TrajectoryLoader : public mrs_lib::Node {
+public:
+  TrajectoryLoader(rclcpp::NodeOptions options);
 
+private:
+  std::atomic<bool> m_is_init = false;
 
-void TrajectoryLoaderNode::onInit() {
-  auto node_ptr = this->shared_from_this();
-  mrs_lib::ParamLoader pl(node_ptr, "TrajectoryLoaderNode");
+  rclcpp::Node::SharedPtr m_node;
+  rclcpp::Clock::SharedPtr m_clock;
+  rclcpp::CallbackGroup::SharedPtr m_cbgrp;
 
-  // -------- parameters --------
-  pl.loadParam("trajectory.mode", mode_);
+  std::optional<std::vector<double>> parseLine(const std::string &line);
+  std::vector<mrs_msgs::msg::Reference>
+  load_from_file(std::ifstream &f_obj, const std::vector<double> &offset);
+  // void run(const std::string_view &type);
+};
 
-  pl.loadParam("trajectory.file", file_path_);
-  pl.loadParam("trajectory.frame_id", frame_id_, std::string(""));
-  // pl.loadParam("service.load_name", service_name_, std::string("trajectory_loader.load"));
+TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options)
+    : mrs_lib::Node("trajectory_loader", options) {
 
-  pl.loadParam("trajectory.use_heading", use_heading_, true);
-  pl.loadParam("trajectory.fly_now",     fly_now_,     false);
-  pl.loadParam("trajectory.dt",          dt_,          0.2);
-  pl.loadParam("trajectory.loop",        loop_,        false);
-  pl.loadParam("trajectory.offset", offset_, std::vector<double>{0.0, 0.0, 0.0, 0.0});
-  
-  pl.loadParam("service.load_name", service_load_, std::string("/") + get_name() + "/control_manager/trajectory_reference");
-  pl.loadParam("service.goto_name", service_goto_, std::string("/") + get_name() + "/control_manager/goto_trajectory_start");
-  pl.loadParam("service.track_name", service_track_, std::string("/") + get_name() + "/control_manager/start_trajectory_tracking");
-  pl.loadParam("service.stop_name", service_stop_, std::string("/") + get_name() + "/control_manager/stop_trajectory_tracking");
+  m_node = this_node_ptr();
+  m_clock = m_node->get_clock();
 
-  RCLCPP_INFO(this->get_logger(), "Node name is: %s", this->get_name());
+  RCLCPP_INFO(m_node->get_logger(), "Initializing");
 
-  if (offset_.size() != 4) {
-    RCLCPP_FATAL(get_logger(), "'trajectory.offset' must have exactly 4 numbers");
+  m_cbgrp = m_node->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive);
+
+  mrs_lib::ParamLoader param_loader(m_node, m_node->get_name());
+
+  std::string custom_config_path;
+  param_loader.loadParam("custom_config", custom_config_path);
+
+  if (custom_config_path != "") {
+    RCLCPP_INFO(m_node->get_logger(), "Loading custom config %s",
+                custom_config_path.c_str());
+
+    param_loader.addYamlFile(custom_config_path);
+  }
+
+  std::string uav_name = param_loader.loadParam2<std::string>("uav_name");
+  std::string mode = param_loader.loadParam2<std::string>("trajectory.mode");
+  std::string file_path =
+      param_loader.loadParam2<std::string>("trajectory.file_path");
+
+  mrs_msgs::msg::TrajectoryReference traj_ref;
+  traj_ref.header.frame_id =
+      "/" + uav_name + "/" +
+      param_loader.loadParam2("trajectory.frame_id", std::string(""));
+
+  param_loader.loadParam("trajectory.use_heading", traj_ref.use_heading, false);
+  param_loader.loadParam("trajectory.fly_now", traj_ref.fly_now, false);
+  param_loader.loadParam("trajectory.dt", traj_ref.dt, 0.2);
+  param_loader.loadParam("trajectory.loop", traj_ref.loop, false);
+
+  std::vector<double> offset = param_loader.loadParam2<std::vector<double>>(
+      "trajectory.offset", std::vector<double>{0.0, 0.0, 0.0, 0.0});
+
+  // param_loader.loadParam("service.load_name",
+  // service_load_,
+  //                        std::string("/") + get_name() +
+  //                            "/control_manager/trajectory_reference");
+  // param_loader.loadParam("service.goto_name",
+  // service_goto_,
+  //                        std::string("/") + get_name() +
+  //                            "/control_manager/goto_trajectory_start");
+  // param_loader.loadParam("service.track_name",
+  // service_track_,
+  //                        std::string("/") + get_name() +
+  //                            "/control_manager/start_trajectory_tracking");
+  // param_loader.loadParam("service.stop_name",
+  // service_stop_,
+  //                        std::string("/") + get_name() +
+  //                            "/control_manager/stop_trajectory_tracking");
+
+  if (offset.size() != 4) {
+    RCLCPP_FATAL(m_node->get_logger(), "'trajectory.offset' must have size 4");
     return;
   }
 
-  if (!pl.loadedSuccessfully()) {
-    RCLCPP_FATAL(this->get_logger(), "Missing required parameters");
+  if (!param_loader.loadedSuccessfully()) {
+    RCLCPP_FATAL(m_node->get_logger(), "Missing required parameters");
     rclcpp::shutdown();
     return;
   }
 
-  if (mode_ == "load") {
-    // -------- read file --------
-    std::ifstream fin(file_path_);
-    if (!fin) {
-      RCLCPP_FATAL(get_logger(), "Cannot open trajectory file: %s", file_path_.c_str());
-      return;
-    }
-    
-    // -------- prepare request --------
-    auto req = std::make_shared<mrs_msgs::srv::TrajectoryReferenceSrv::Request>();
-    auto & traj = req->trajectory;
-    traj.header.stamp    = rclcpp::Time(0);
-    traj.header.frame_id = frame_id_;
-    traj.use_heading     = use_heading_;
-    traj.fly_now         = fly_now_;
-    traj.dt              = dt_;
-    traj.loop            = loop_;
-
-    std::string line;
-    std::vector<std::string> parts;
-    while (std::getline(fin, line)) {
-      boost::replace_all(line, ",", " ");
-      boost::split(parts, line, boost::is_any_of(" 	"), boost::token_compress_on);
-      if (parts.size() < 4) continue;
-      mrs_msgs::msg::Reference ref;
-      ref.position.x = std::stod(parts[0]) + offset_[0];
-      ref.position.y = std::stod(parts[1]) + offset_[1];
-      ref.position.z = std::stod(parts[2]) + offset_[2];
-      ref.heading    = std::stod(parts[3]) + offset_[3];
-      traj.points.push_back(ref);
-    }
-
-    // -------- call load service --------
-    client_traj_ = this->create_client<mrs_msgs::srv::TrajectoryReferenceSrv>(service_load_);
-    if (!client_traj_->wait_for_service(std::chrono::seconds(2))) {
-      RCLCPP_ERROR(get_logger(), "Service %s not available", service_load_.c_str());
-    } else {
-      auto fut = client_traj_->async_send_request(req);
-      std::thread([fut = std::move(fut), this]() mutable {
-        try {
-          auto resp = fut.get();
-          if (resp->success)
-            RCLCPP_INFO(get_logger(), "Trajectory loaded");
-          else
-            RCLCPP_ERROR(get_logger(), "Load failed: %s", resp->message.c_str());
-        } catch (...) {
-          RCLCPP_ERROR(get_logger(), "Exception in load service call");
-        }
-      }).detach();
-    }
-
-  } else if (mode_ == "goto" || mode_ == "track" || mode_ == "stop") {
-    
-    // -------- Choose trigger service --------
-    std::string srv = (mode_ == "goto"  ? service_goto_
-                         : mode_ == "track" ? service_track_
-                                            : service_stop_);
-    client_trig_ = this->create_client<std_srvs::srv::Trigger>(srv);
-    if (!client_trig_->wait_for_service(std::chrono::seconds(2))) {
-      RCLCPP_ERROR(get_logger(), "Service %s not available", srv.c_str());
-    } else {
-      auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
-      auto fut = client_trig_->async_send_request(req);
-      std::thread([fut = std::move(fut), this, srv]() mutable {
-        try {
-          auto resp = fut.get();
-          if (resp->success)
-            RCLCPP_INFO(get_logger(), "%s succeeded", srv.c_str());
-          else
-            RCLCPP_ERROR(get_logger(), "%s failed: %s", srv.c_str(), resp->message.c_str());
-        } catch (...) {
-          RCLCPP_ERROR(get_logger(), "Exception in %s call", srv.c_str());
-        }
-      }).detach();
-    }
-
-  } else {
-    RCLCPP_ERROR(get_logger(), "Unknown mode: %s", mode_.c_str());
+  std::ifstream fin(file_path);
+  if (!fin) {
+    RCLCPP_FATAL(m_node->get_logger(), "Cannot open trajectory file: %s",
+                 file_path.c_str());
+    return;
   }
 
-  init_timer_->cancel();
+  auto service_client_load_traj =
+      mrs_lib::ServiceClientHandler<mrs_msgs::srv::TrajectoryReferenceSrv>(
+          m_node, "~/load_traj", m_cbgrp);
+
+  if (!service_client_load_traj.waitForService(std::chrono::seconds(60))) {
+    RCLCPP_FATAL(m_node->get_logger(), "Service %s not found",
+                 service_client_load_traj.getServiceName().c_str());
+    rclcpp::shutdown();
+    return;
+  }
+
+  if (mode == "load") {
+    traj_ref.header.stamp = rclcpp::Time(0);
+    traj_ref.points = load_from_file(fin, offset);
+
+    auto req =
+        std::make_shared<mrs_msgs::srv::TrajectoryReferenceSrv::Request>();
+    req->trajectory = traj_ref;
+
+    auto response = service_client_load_traj.callSync(req);
+
+    if (!response) {
+
+      RCLCPP_WARN(m_node->get_logger(), "Service %s did not respond",
+                  service_client_load_traj.getServiceName().c_str());
+    } else {
+
+      if (response.value()->success) {
+
+        RCLCPP_INFO(m_node->get_logger(), "Service %s returned success",
+                    service_client_load_traj.getServiceName().c_str());
+      } else {
+
+        RCLCPP_INFO(m_node->get_logger(),
+                    "Service %s returned failure with msg: %s",
+                    service_client_load_traj.getServiceName().c_str(),
+                    response.value()->message.c_str());
+      }
+    }
+  }
+
+  RCLCPP_INFO(m_node->get_logger(), "Finished");
 }
 
-}  // namespace mrs_uav_trajectory_loader
+std::optional<std::vector<double>>
+TrajectoryLoader::parseLine(const std::string &line) {
+  std::istringstream ss(line);
+  std::string token;
+  std::vector<double> values;
+
+  while (std::getline(ss, token, ',')) {
+    token.erase(0, token.find_first_not_of(" \t\r\n"));
+    token.erase(token.find_last_not_of(" \t\r\n") + 1);
+    if (token.empty())
+      continue;
+
+    try {
+      values.push_back(std::stod(token));
+    } catch (...) {
+      return std::nullopt;
+    }
+  }
+
+  if (values.size() < 4)
+    return std::nullopt;
+
+  return std::make_optional(values);
+}
+
+std::vector<mrs_msgs::msg::Reference>
+TrajectoryLoader::load_from_file(std::ifstream &f_obj,
+                                 const std::vector<double> &offset) {
+
+  std::vector<mrs_msgs::msg::Reference> ref_points;
+
+  std::string line;
+  while (std::getline(f_obj, line)) {
+    // ignore empty lines and comments
+    if (line.empty() || line.at(0) == '#')
+      continue;
+
+    // safe parsing of line
+    auto ret = parseLine(line);
+    if (ret) {
+      auto &values = ret.value();
+      mrs_msgs::msg::Reference ref;
+
+      ref.position.x = values.at(0) + offset.at(0);
+      ref.position.y = values.at(1) + offset.at(1);
+      ref.position.z = values.at(2) + offset.at(2);
+      ref.heading = values.at(3) + offset.at(3);
+
+      ref_points.push_back(ref);
+    } else {
+      RCLCPP_WARN(m_node->get_logger(), "Skipping bad line: %s", line.c_str());
+    }
+  }
+
+  return ref_points;
+}
+// void TrajectoryLoader::run(const std::string_view &mode) {
+//
+//   if (mode_ == "goto" || mode_ == "track" || mode_ == "stop") {
+//
+//     // --------
+//     // Choose
+//     // trigger
+//     // service
+//     // --------
+//     std::string srv = (mode_ == "goto"    ? service_goto_
+//                        : mode_ == "track" ? service_track_
+//                                           : service_stop_);
+//     client_trig_ = this->create_client<std_srvs::srv::Trigger>(srv);
+//     if (!client_trig_->wait_for_service(std::chrono::seconds(2))) {
+//       RCLCPP_ERROR(get_logger(), "Service %s not available",
+//       srv.c_str());
+//     } else {
+//       auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
+//       auto fut = client_trig_->async_send_request(req);
+//       std::thread([fut = std::move(fut), this, srv]() mutable {
+//         try {
+//           auto resp = fut.get();
+//           if (resp->success)
+//             RCLCPP_INFO(get_logger(), "%s succeeded", srv.c_str());
+//           else
+//             RCLCPP_ERROR(get_logger(), "%s failed: %s", srv.c_str(),
+//                          resp->message.c_str());
+//         } catch (...) {
+//           RCLCPP_ERROR(get_logger(), "Exception in %s call",
+//           srv.c_str());
+//         }
+//       }).detach();
+//     }
+//   } else {
+//     RCLCPP_ERROR(get_logger(),
+//                  "Un"
+//                  "kn"
+//                  "ow"
+//                  "n "
+//                  "mo"
+//                  "de"
+//                  ": "
+//                  "%"
+//                  "s",
+//                  mode_.c_str());
+//   }
+//
+//   init_timer_->cancel();
+// }
+
+} // namespace
+  // mrs_uav_trajectory_loader
+//
+#include <rclcpp_components/register_node_macro.hpp>
+RCLCPP_COMPONENTS_REGISTER_NODE(mrs_uav_trajectory_loader::TrajectoryLoader)

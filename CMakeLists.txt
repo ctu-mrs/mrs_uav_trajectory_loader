@@ -11,62 +11,33 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # ---------------- Dependencies ----------------
-set(DEPENDENCIES
-  rclcpp
-  rclcpp_components
-  mrs_msgs
-  std_srvs
-  mrs_lib
-)
+set(DEPENDENCIES rclcpp rclcpp_components mrs_msgs std_srvs mrs_lib)
 
 foreach(dep IN LISTS DEPENDENCIES)
   find_package(${dep} REQUIRED)
 endforeach()
 
-# ---------------- Include dirs ----------------
-include_directories(
-  include
-  ${mrs_lib_INCLUDE_DIRS}    # ensure mrs_lib headers
-)
-
 # ---------------- Build ----------------
-add_library(trajectory_loader_component SHARED
-  src/trajectory_loader.cpp
-)
+add_library(trajectory_loader_component SHARED src/trajectory_loader.cpp)
 
-target_include_directories(trajectory_loader_component PUBLIC
-  include
-  ${mrs_lib_INCLUDE_DIRS}
-)
-
-ament_target_dependencies(trajectory_loader_component
-  ${DEPENDENCIES}
-)
+ament_target_dependencies(trajectory_loader_component ${DEPENDENCIES})
 
 # register as component and add standalone executable
 rclcpp_components_register_node(
-  trajectory_loader_component
-  PLUGIN "mrs_uav_trajectory_loader::TrajectoryLoaderNode"
-  EXECUTABLE trajectory_loader_node_component
-)
+  trajectory_loader_component PLUGIN
+  "mrs_uav_trajectory_loader::TrajectoryLoader" EXECUTABLE
+  trajectory_loader_node_component)
 
 # ---------------- Install ---------------------
 install(
   TARGETS trajectory_loader_component trajectory_loader_node_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
 
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
+install(DIRECTORY include/ DESTINATION include)
 
-install(
-  DIRECTORY launch config
-  sample_trajectories
-  DESTINATION share/${PROJECT_NAME}
-)
+install(DIRECTORY launch config sample_trajectories
+        DESTINATION share/${PROJECT_NAME})
 
 ament_package()

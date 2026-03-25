@@ -3,7 +3,7 @@
   <name>mrs_uav_trajectory_loader</name>
   <version>0.0.1</version>
   <description>Minimal ROS2 trajectory loader as a component.</description>
-  <maintainer email="you@example.com">You</maintainer>
+  <maintainer email="afzal.ahmad@fel.cvut.cz">Afzal Ahmad</maintainer>
   <license>Apache-2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>rclcpp</depend>
