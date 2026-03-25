@@ -38,6 +38,7 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options)
       rclcpp::CallbackGroupType::MutuallyExclusive);
 
   mrs_lib::ParamLoader param_loader(m_node, m_node->get_name());
+  param_loader.addYamlFileFromParam("default_config");
 
   std::string custom_config_path;
   param_loader.loadParam("custom_config", custom_config_path);
@@ -50,22 +51,21 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options)
   }
 
   std::string uav_name = param_loader.loadParam2<std::string>("uav_name");
-  std::string mode = param_loader.loadParam2<std::string>("trajectory.mode");
-  std::string file_path =
-      param_loader.loadParam2<std::string>("trajectory.file_path");
+  std::string file_path = param_loader.loadParam2<std::string>("traj_file");
+  std::string mode = param_loader.loadParam2<std::string>("trajectory/mode");
 
   mrs_msgs::msg::TrajectoryReference traj_ref;
   traj_ref.header.frame_id =
       "/" + uav_name + "/" +
-      param_loader.loadParam2("trajectory.frame_id", std::string(""));
+      param_loader.loadParam2("trajectory/frame_id", std::string(""));
 
-  param_loader.loadParam("trajectory.use_heading", traj_ref.use_heading, false);
-  param_loader.loadParam("trajectory.fly_now", traj_ref.fly_now, false);
-  param_loader.loadParam("trajectory.dt", traj_ref.dt, 0.2);
-  param_loader.loadParam("trajectory.loop", traj_ref.loop, false);
+  param_loader.loadParam("trajectory/use_heading", traj_ref.use_heading, false);
+  param_loader.loadParam("trajectory/fly_now", traj_ref.fly_now, false);
+  param_loader.loadParam("trajectory/dt", traj_ref.dt, 0.2);
+  param_loader.loadParam("trajectory/loop", traj_ref.loop, false);
 
   std::vector<double> offset = param_loader.loadParam2<std::vector<double>>(
-      "trajectory.offset", std::vector<double>{0.0, 0.0, 0.0, 0.0});
+      "trajectory/offset", std::vector<double>{0.0, 0.0, 0.0, 0.0});
 
   // param_loader.loadParam("service.load_name",
   // service_load_,
@@ -84,13 +84,14 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options)
   //                        std::string("/") + get_name() +
   //                            "/control_manager/stop_trajectory_tracking");
 
-  if (offset.size() != 4) {
-    RCLCPP_FATAL(m_node->get_logger(), "'trajectory.offset' must have size 4");
+  if (!param_loader.loadedSuccessfully()) {
+    RCLCPP_FATAL(m_node->get_logger(), "Missing required parameters");
+    rclcpp::shutdown();
     return;
   }
 
-  if (!param_loader.loadedSuccessfully()) {
-    RCLCPP_FATAL(m_node->get_logger(), "Missing required parameters");
+  if (offset.size() != 4) {
+    RCLCPP_FATAL(m_node->get_logger(), "'trajectory/offset' must have size 4");
     rclcpp::shutdown();
     return;
   }
@@ -99,6 +100,7 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options)
   if (!fin) {
     RCLCPP_FATAL(m_node->get_logger(), "Cannot open trajectory file: %s",
                  file_path.c_str());
+    rclcpp::shutdown();
     return;
   }
 
@@ -106,7 +108,7 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options)
       mrs_lib::ServiceClientHandler<mrs_msgs::srv::TrajectoryReferenceSrv>(
           m_node, "~/load_traj", m_cbgrp);
 
-  if (!service_client_load_traj.waitForService(std::chrono::seconds(60))) {
+  if (!service_client_load_traj.waitForService(std::chrono::seconds(1))) {
     RCLCPP_FATAL(m_node->get_logger(), "Service %s not found",
                  service_client_load_traj.getServiceName().c_str());
     rclcpp::shutdown();
@@ -121,6 +123,9 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options)
         std::make_shared<mrs_msgs::srv::TrajectoryReferenceSrv::Request>();
     req->trajectory = traj_ref;
 
+    RCLCPP_INFO(m_node->get_logger(),
+                "Loading trajectory reference using service %s",
+                service_client_load_traj.getServiceName().c_str());
     auto response = service_client_load_traj.callSync(req);
 
     if (!response) {

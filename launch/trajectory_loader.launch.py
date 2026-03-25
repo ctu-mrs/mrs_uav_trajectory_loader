@@ -12,11 +12,15 @@ from launch.substitutions import (
 )
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
+from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
 
     ld = LaunchDescription()
+
+    pkg_name = "mrs_uav_trajectory_loader"
+    this_pkg_path = get_package_share_directory(pkg_name)
     namespace = "trajectory_loader"
 
     # Declare arguments
@@ -78,6 +82,38 @@ def generate_launch_description():
         else_value=custom_config,
     )
 
+    traj_file = LaunchConfiguration("traj_file")
+
+    # this adds the args to the list of args available for this launch files
+    # these args can be listed at runtime using -s flag
+    # default_value is required to if the arg is supposed to be optional at launch time
+    ld.add_action(
+        DeclareLaunchArgument(
+            name="traj_file",
+            default_value=this_pkg_path + "/config/trajectory/circle.txt",
+            description="Path to the trajectory TXT/CSV file. The path can be absolute, starting with '/' or relative to the current working directory",
+        )
+    )
+
+    # behaviour:
+    #     traj_file == "" => traj_file: ""
+    #     traj_file == "/<path>" => traj_file: "/<path>"
+    #     traj_file == "<path>" => traj_file: "$(pwd)/<path>"
+    traj_file = IfElseSubstitution(
+        condition=PythonExpression(
+            [
+                '"',
+                traj_file,
+                '" != "" and ',
+                'not "',
+                traj_file,
+                '".startswith("/")',
+            ]
+        ),
+        if_value=PathJoinSubstitution([EnvironmentVariable("PWD"), traj_file]),
+        else_value=traj_file,
+    )
+
     # Composable node
     node = ComposableNode(
         package="mrs_uav_trajectory_loader",
@@ -87,7 +123,13 @@ def generate_launch_description():
         parameters=[
             {"uav_name": uav_name},
             {"use_sim_time": use_sim_time},
+            {"default_config": this_pkg_path + "/config/default.yaml"},
             {"custom_config": custom_config},
+            {"traj_file": traj_file},
+        ],
+        remappings=[
+            # service clients
+            ("~/load_traj", "control_manager/trajectory_reference"),
         ],
     )
 

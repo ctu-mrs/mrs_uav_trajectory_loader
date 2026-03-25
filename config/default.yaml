@@ -1,6 +1,5 @@
 trajectory:
   mode: "load"
-  file_path: "./trajectory/cirle.txt"
   frame_id: "local_origin" # this frame is prefixed with UAV_NAME
   dt: 0.2
   loop: false
