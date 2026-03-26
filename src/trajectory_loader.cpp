@@ -56,7 +56,7 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options)
 
   mrs_msgs::msg::TrajectoryReference traj_ref;
   traj_ref.header.frame_id =
-      "/" + uav_name + "/" +
+      uav_name + "/" +
       param_loader.loadParam2("trajectory/frame_id", std::string(""));
 
   param_loader.loadParam("trajectory/use_heading", traj_ref.use_heading, false);
