@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os
+import os, sys
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import (
@@ -48,6 +48,25 @@ def generate_launch_description():
             default_value=os.getenv("USE_SIM_TIME", "false"),
             description="Should the node subscribe to sim time?",
         )
+    )
+
+    debug = LaunchConfiguration("debug")
+
+    # this adds the args to the list of args available for this launch files
+    # these args can be listed at runtime using -s flag
+    # default_value is required to if the arg is supposed to be optional at launch time
+    ld.add_action(
+        DeclareLaunchArgument(
+            name="debug",
+            default_value="false",
+            description="Runs the node within a gdb debug session.",
+        )
+    )
+
+    debug = IfElseSubstitution(
+        condition=PythonExpression(['"', debug, '" == "true"']),
+        if_value="debug_roslaunch " + os.ttyname(sys.stdout.fileno()),
+        else_value="",
     )
 
     custom_config = LaunchConfiguration("custom_config")
@@ -139,6 +158,7 @@ def generate_launch_description():
         package="rclcpp_components",
         executable="component_container_mt",
         output="screen",
+        prefix=[debug],
         composable_node_descriptions=[node],
         arguments=["--ros-args", "--log-level", LaunchConfiguration("log_level")],
     )
