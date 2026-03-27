@@ -1,8 +1,8 @@
 trajectory:
   mode: "load"
   frame_id: "local_origin" # this frame is prefixed with UAV_NAME
-  dt: 0.2
+  dt: 0.1
   loop: false
-  use_heading: false
-  fly_now: false
+  use_heading: true
+  fly_now: true
   offset: [0.0, 0.0, 0.0, 0.0] # [x, y, z, heading]
