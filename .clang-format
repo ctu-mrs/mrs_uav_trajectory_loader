@@ -1,0 +1,33 @@
+Standard: Cpp11
+BasedOnStyle: Google
+AccessModifierOffset: -2
+ColumnLimit: 160
+MaxEmptyLinesToKeep: 2
+AlignAfterOpenBracket: Align
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: Yes
+AlignConsecutiveAssignments: true
+SpaceBeforeParens: ControlStatements
+BreakBeforeBinaryOperators: None
+KeepEmptyLinesAtTheStartOfBlocks: true
+BreakBeforeBraces: Custom
+SortIncludes: false
+NamespaceIndentation: None
+AlignConsecutiveDeclarations: true
+
+BraceWrapping:
+  AfterClass: false
+  AfterControlStatement: false
+  AfterEnum: true
+  AfterFunction: false
+  AfterNamespace: true
+  AfterObjCDeclaration: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: false
+  IndentBraces: false
