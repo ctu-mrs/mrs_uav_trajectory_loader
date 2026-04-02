@@ -46,8 +46,8 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options) : mrs_lib::Node(
   m_cbgrp = m_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
   mrs_lib::ParamLoader param_loader(m_node, m_node->get_name());
-  param_loader.addYamlFileFromParam("default_config");
 
+  // load config files in the order they should be searched
   std::string custom_config_path;
   param_loader.loadParam("custom_config", custom_config_path);
 
@@ -56,6 +56,7 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options) : mrs_lib::Node(
 
     param_loader.addYamlFile(custom_config_path);
   }
+  param_loader.addYamlFileFromParam("default_config");
 
   std::string uav_name  = param_loader.loadParam2<std::string>("uav_name");
   std::string file_path = param_loader.loadParam2<std::string>("traj_file");
