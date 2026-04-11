@@ -1,8 +1,39 @@
+---
 trajectory:
-  mode: "load"
-  frame_id: "local_origin" # this frame is prefixed with UAV_NAME
+  # The trajectory waypoints are defined in this frame.
+  # The frame name is automatically prefixed with the UAV name at runtime
+  # e.g. "local_origin" becomes "uav1/local_origin" for UAV named "uav1"
+  # Common options:
+  #   "local_origin"  - origin set at UAV spawn/takeoff position
+  #   "gps_origin"    - origin tied to a fixed GPS coordinate
+  #   "utm_origin"    - UTM coordinate frame
+  #   "fcu"           - body frame of the UAV
+  frame_id: local_origin
+
+  # Time step between consecutive waypoints in seconds
+  # Must be >= 0.01 s (the control loop dt for MpcTracker)
+  # Typical values: 0.1 (10 Hz), 0.2 (5 Hz)
   dt: 0.1
+
+  # Whether to loop the trajectory after reaching the last waypoint
+  # true  - continuously repeat the trajectory
+  # false - stop and hover at the last waypoint
   loop: false
+
+  # Whether to use the heading values specified in the trajectory file
+  # true  - UAV follows the heading column in the trajectory file
+  # false - heading is left to the heading controller independently
+  # Note: trajectory file must have a heading column if true
   use_heading: true
+
+  # Whether to start flying the trajectory immediately after it is loaded
+  # true  - begins tracking as soon as the trajectory is loaded
+  # false - waits for a service call to /UAV_NAME/control_manager/start_trajectory_tracking
   fly_now: true
-  offset: [0.0, 0.0, 0.0, 0.0] # [x, y, z, heading]
+
+  # Static offset added to every waypoint in the trajectory
+  # Format: [x, y, z, heading]
+  # Units: meters for x/y/z, radians for heading
+  # Useful for translating an entire trajectory without modifying the file
+  # e.g. [1.0, 0.0, 0.5, 0.0] shifts all points 1m in x and 0.5m in z
+  offset: [0.0, 0.0, 0.0, 0.0]
