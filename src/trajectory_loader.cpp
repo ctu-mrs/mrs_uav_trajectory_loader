@@ -30,8 +30,8 @@ private:
 
   mrs_msgs::msg::TrajectoryReference m_traj_ref;
 
-  std::optional<std::vector<double>>    parseLine(const std::string &line);
-  std::vector<mrs_msgs::msg::Reference> load_from_file(std::ifstream &f_obj, const std::vector<double> &offset);
+  std::optional<std::vector<double>>    parseLine(const std::string& line);
+  std::vector<mrs_msgs::msg::Reference> load_from_file(std::ifstream& f_obj, const std::vector<double>& offset);
 
   // void run(const std::string_view &type);
 };
@@ -60,7 +60,6 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options) : mrs_lib::Node(
 
   std::string uav_name  = param_loader.loadParam2<std::string>("uav_name");
   std::string file_path = param_loader.loadParam2<std::string>("traj_file");
-  std::string mode      = param_loader.loadParam2<std::string>("trajectory/mode");
 
   m_traj_ref.header.frame_id = uav_name + "/" + param_loader.loadParam2("trajectory/frame_id", std::string(""));
 
@@ -70,23 +69,6 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options) : mrs_lib::Node(
   param_loader.loadParam("trajectory/loop", m_traj_ref.loop, false);
 
   std::vector<double> offset = param_loader.loadParam2<std::vector<double>>("trajectory/offset", std::vector<double>{0.0, 0.0, 0.0, 0.0});
-
-  // param_loader.loadParam("service.load_name",
-  // service_load_,
-  //                        std::string("/") + get_name() +
-  //                            "/control_manager/trajectory_reference");
-  // param_loader.loadParam("service.goto_name",
-  // service_goto_,
-  //                        std::string("/") + get_name() +
-  //                            "/control_manager/goto_trajectory_start");
-  // param_loader.loadParam("service.track_name",
-  // service_track_,
-  //                        std::string("/") + get_name() +
-  //                            "/control_manager/start_trajectory_tracking");
-  // param_loader.loadParam("service.stop_name",
-  // service_stop_,
-  //                        std::string("/") + get_name() +
-  //                            "/control_manager/stop_trajectory_tracking");
 
   if (!param_loader.loadedSuccessfully()) {
     RCLCPP_FATAL(m_node->get_logger(), "Missing required parameters");
@@ -120,10 +102,7 @@ TrajectoryLoader::TrajectoryLoader(rclcpp::NodeOptions options) : mrs_lib::Node(
   m_traj_ref.header.stamp = rclcpp::Time(0);
   m_traj_ref.points       = load_from_file(fin, offset);
 
-  if (mode == "load") {
-    m_timer_loader->start();
-  } else {
-  }
+  m_timer_loader->start();
 
   RCLCPP_INFO(m_node->get_logger(), "Node initialized");
 }
@@ -152,15 +131,14 @@ void TrajectoryLoader::cb_timer_loader() {
 
       RCLCPP_INFO(m_node->get_logger(), "Service %s returned success", sc_name.c_str());
     } else {
-
-      RCLCPP_INFO(m_node->get_logger(), "Service %s returned failure with msg: %s", sc_name.c_str(), response.value()->message.c_str());
+      RCLCPP_ERROR(m_node->get_logger(), "Service %s returned failure with msg: %s", sc_name.c_str(), response.value()->message.c_str());
     }
   }
-  RCLCPP_INFO(m_node->get_logger(), "Loaded trajectory reference using service %s", sc_name.c_str());
   m_timer_loader->stop();
+  rclcpp::shutdown();
 }
 
-std::optional<std::vector<double>> TrajectoryLoader::parseLine(const std::string &line) {
+std::optional<std::vector<double>> TrajectoryLoader::parseLine(const std::string& line) {
   std::istringstream  ss(line);
   std::string         token;
   std::vector<double> values;
@@ -185,7 +163,7 @@ std::optional<std::vector<double>> TrajectoryLoader::parseLine(const std::string
   return std::make_optional(values);
 }
 
-std::vector<mrs_msgs::msg::Reference> TrajectoryLoader::load_from_file(std::ifstream &f_obj, const std::vector<double> &offset) {
+std::vector<mrs_msgs::msg::Reference> TrajectoryLoader::load_from_file(std::ifstream& f_obj, const std::vector<double>& offset) {
 
   std::vector<mrs_msgs::msg::Reference> ref_points;
 
@@ -198,7 +176,7 @@ std::vector<mrs_msgs::msg::Reference> TrajectoryLoader::load_from_file(std::ifst
     // safe parsing of line
     auto ret = parseLine(line);
     if (ret) {
-      auto                    &values = ret.value();
+      auto&                    values = ret.value();
       mrs_msgs::msg::Reference ref;
 
       ref.position.x = values.at(0) + offset.at(0);
