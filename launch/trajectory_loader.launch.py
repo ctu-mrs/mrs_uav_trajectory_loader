@@ -142,8 +142,8 @@ def generate_launch_description():
         parameters=[
             {"uav_name": uav_name},
             {"use_sim_time": use_sim_time},
-            {"default_config": this_pkg_path + "/config/default.yaml"},
             {"custom_config": custom_config},
+            {"default_config": this_pkg_path + "/config/default.yaml"},
             {"traj_file": traj_file},
         ],
         remappings=[
