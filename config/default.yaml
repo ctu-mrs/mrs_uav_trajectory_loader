@@ -24,12 +24,12 @@ trajectory:
   # true  - UAV follows the heading column in the trajectory file
   # false - heading is left to the heading controller independently
   # Note: trajectory file must have a heading column if true
-  use_heading: true
+  use_heading: false
 
   # Whether to start flying the trajectory immediately after it is loaded
   # true  - begins tracking as soon as the trajectory is loaded
   # false - waits for a service call to /UAV_NAME/control_manager/start_trajectory_tracking
-  fly_now: true
+  fly_now: false
 
   # Static offset added to every waypoint in the trajectory
   # Format: [x, y, z, heading]
