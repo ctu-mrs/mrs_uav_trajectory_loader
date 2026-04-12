@@ -47,9 +47,9 @@ trajectory:
 ```
 
 ## Launch Parameters
-- `uav_name`: Automatically taken from ```bash UAV_NAME``` environment variable.
-- `use_sim_time`: Automatically taken from ```bash USE_SIM_TIME``` environment variable. Change it if using with ```bash ros2 bag play```.
-- `debug`: Set to ```bash true``` if you need the node running inside a ```bash gdb``` session.
+- `uav_name`: Automatically taken from ```UAV_NAME``` environment variable.
+- `use_sim_time`: Automatically taken from ```USE_SIM_TIME``` environment variable. Change it if using with ```ros2 bag play```.
+- `debug`: Set to ```true``` if you need the node running inside a ```gdb``` session.
 - `custom_config`: Provide a custom config file if you want to override the default parameters.
 - `traj_file`: Provide a custom config file if you want to override the default parameters.
 
