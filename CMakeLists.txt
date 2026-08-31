@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.28)
 project(mrs_uav_trajectory_loader)
 
 # C++20 (matching path_loader)
@@ -20,7 +20,13 @@ endforeach()
 # ---------------- Build ----------------
 add_library(trajectory_loader_component SHARED src/trajectory_loader.cpp)
 
-ament_target_dependencies(trajectory_loader_component ${DEPENDENCIES})
+target_link_libraries(trajectory_loader_component
+  rclcpp::rclcpp
+  rclcpp_components::component
+  ${mrs_msgs_TARGETS}
+  ${std_srvs_TARGETS}
+  mrs_lib::mrs_lib
+)
 
 # register as component and add standalone executable
 rclcpp_components_register_node(
