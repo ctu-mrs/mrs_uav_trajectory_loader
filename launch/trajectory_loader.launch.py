@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-import os, sys
+import os
+import sys
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import (
@@ -10,8 +12,8 @@ from launch.substitutions import (
     PathJoinSubstitution,
     EnvironmentVariable,
 )
-from launch_ros.actions import ComposableNodeContainer
-from launch_ros.descriptions import ComposableNode
+from launch_ros.actions import Node
+
 from ament_index_python.packages import get_package_share_directory
 
 
@@ -19,42 +21,82 @@ def generate_launch_description():
 
     ld = LaunchDescription()
 
-    pkg_name = "mrs_uav_trajectory_loader"
-    this_pkg_path = get_package_share_directory(pkg_name)
-    namespace = "trajectory_loader"
+    pkg_name = "mrs_multi_uav_trajectory_loader"
+    pkg_share = get_package_share_directory(pkg_name)
 
-    # Declare arguments
+    # --------------------------------------------------------------------------
+    # Launch arguments
+    # --------------------------------------------------------------------------
+
+    # uav_name
     uav_name = LaunchConfiguration("uav_name")
 
-    ld.add_action(
-        DeclareLaunchArgument(
+    ld.add_action(DeclareLaunchArgument(
             name="uav_name",
-            default_value=os.getenv("UAV_NAME", "uav1"),
-            description="The uav name used for namespacing.",
-        )
-    )
+            default_value=os.getenv("UAV_NAME", ""),
+            description=(
+                "UAV name where the loader is running. "
+                "Can be empty when running as a centralized loader."
+            ),
+    ))
+
+
+    # config
+    default_config = PathJoinSubstitution([pkg_share, "config", "default.yaml"])
 
     ld.add_action(
         DeclareLaunchArgument(
-            name="log_level", default_value="info", description="Log level"
+            name="config",
+            default_value=default_config,
+            description="Path or filename for multi-UAV trajectory configuration file.",
         )
     )
 
+    config_arg = LaunchConfiguration("config")
+
+    config = IfElseSubstitution(
+        condition=PythonExpression(["'", config_arg, "'.startswith('/')"]),
+        if_value=config_arg,
+        else_value=PathJoinSubstitution([pkg_share, "config", config_arg]),
+    )
+
+    # service config
+    service_default_config = PathJoinSubstitution([pkg_share, "config", "services.yaml"])
+
+    ld.add_action(
+        DeclareLaunchArgument(
+            name="service_config",
+            default_value=service_default_config,
+            description="Path or filename for multi-UAV trajectory configuration file.",
+        )
+    )
+
+    service_config_arg = LaunchConfiguration("service_config")
+
+    service_config = IfElseSubstitution(
+        condition=PythonExpression(["'", service_config_arg, "'.startswith('/')"]),
+        if_value=service_config_arg,
+        else_value=PathJoinSubstitution([pkg_share, "config", service_config_arg]),
+    )
+
+    # use_sim_time
     use_sim_time = LaunchConfiguration("use_sim_time")
+    ld.add_action(DeclareLaunchArgument(
+        "use_sim_time",
+        default_value=os.getenv("USE_SIM_TIME", "false"),
+        description="Use simulation time.",
+    ))
 
-    ld.add_action(
-        DeclareLaunchArgument(
-            name="use_sim_time",
-            default_value=os.getenv("USE_SIM_TIME", "false"),
-            description="Should the node subscribe to sim time?",
-        )
-    )
+    # log_level
+    log_level = LaunchConfiguration("log_level")
+    ld.add_action(DeclareLaunchArgument(
+        "log_level",
+        default_value="info",
+        description="Log level.",
+    ))
 
+    # debug
     debug = LaunchConfiguration("debug")
-
-    # this adds the args to the list of args available for this launch files
-    # these args can be listed at runtime using -s flag
-    # default_value is required to if the arg is supposed to be optional at launch time
     ld.add_action(
         DeclareLaunchArgument(
             name="debug",
@@ -69,99 +111,36 @@ def generate_launch_description():
         else_value="",
     )
 
-    custom_config = LaunchConfiguration("custom_config")
+    # trajectory path
+    pkg_config_path = os.path.join(pkg_share, 'config')
 
-    # this adds the args to the list of args available for this launch files
-    # these args can be listed at runtime using -s flag
-    # default_value is required to if the arg is supposed to be optional at launch time
-    ld.add_action(
-        DeclareLaunchArgument(
-            name="custom_config",
-            default_value="",
-            description="Path to the custom configuration file. The path can be absolute, starting with '/' or relative to the current working directory",
-        )
-    )
 
-    # behaviour:
-    #     custom_config == "" => custom_config: ""
-    #     custom_config == "/<path>" => custom_config: "/<path>"
-    #     custom_config == "<path>" => custom_config: "$(pwd)/<path>"
-    custom_config = IfElseSubstitution(
-        condition=PythonExpression(
-            [
-                '"',
-                custom_config,
-                '" != "" and ',
-                'not "',
-                custom_config,
-                '".startswith("/")',
-            ]
-        ),
-        if_value=PathJoinSubstitution([EnvironmentVariable("PWD"), custom_config]),
-        else_value=custom_config,
-    )
+    # --------------------------------------------------------------------------
+    # Node description
+    # --------------------------------------------------------------------------
 
-    traj_file = LaunchConfiguration("traj_file")
-
-    # this adds the args to the list of args available for this launch files
-    # these args can be listed at runtime using -s flag
-    # default_value is required to if the arg is supposed to be optional at launch time
-    ld.add_action(
-        DeclareLaunchArgument(
-            name="traj_file",
-            default_value=this_pkg_path + "/config/trajectory/circle.txt",
-            description="Path to the trajectory TXT/CSV file. The path can be absolute, starting with '/' or relative to the current working directory",
-        )
-    )
-
-    # behaviour:
-    #     traj_file == "" => traj_file: ""
-    #     traj_file == "/<path>" => traj_file: "/<path>"
-    #     traj_file == "<path>" => traj_file: "$(pwd)/<path>"
-    traj_file = IfElseSubstitution(
-        condition=PythonExpression(
-            [
-                '"',
-                traj_file,
-                '" != "" and ',
-                'not "',
-                traj_file,
-                '".startswith("/")',
-            ]
-        ),
-        if_value=PathJoinSubstitution([EnvironmentVariable("PWD"), traj_file]),
-        else_value=traj_file,
-    )
-
-    # Composable node
-    node = ComposableNode(
-        package="mrs_uav_trajectory_loader",
-        plugin="mrs_uav_trajectory_loader::TrajectoryLoader",
+    node = Node(
+        package=pkg_name,
+        executable="trajectory_loader_node",
         name="trajectory_loader",
         namespace=uav_name,
-        parameters=[
-            {"uav_name": uav_name},
-            {"use_sim_time": use_sim_time},
-            {"custom_config": custom_config},
-            {"default_config": this_pkg_path + "/config/default.yaml"},
-            {"traj_file": traj_file},
-        ],
-        remappings=[
-            # service clients
-            ("~/load_traj", "control_manager/trajectory_reference"),
-        ],
-    )
-
-    container = ComposableNodeContainer(
-        namespace=uav_name,
-        name=namespace + "_container",
-        package="rclcpp_components",
-        executable="component_container_mt",
-        output="screen",
         prefix=[debug],
-        composable_node_descriptions=[node],
-        arguments=["--ros-args", "--log-level", LaunchConfiguration("log_level")],
+        output="screen",
+        parameters=[
+            {"uav_name": uav_name,
+             "config": config,
+             "config_dir_path": pkg_config_path,
+             "service_config": service_config,
+             "use_sim_time": use_sim_time,
+            },
+        ],
+
+        arguments=[
+            "--ros-args",
+            "--log-level",
+            log_level,
+        ],
     )
 
-    ld.add_action(container)
+    ld.add_action(node)
     return ld

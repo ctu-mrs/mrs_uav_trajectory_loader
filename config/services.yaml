@@ -1,0 +1,7 @@
+services:
+  availability_timer: 0.1 # seconds
+  availability_timeout: 3 # seconds
+  uavs:
+    uav1: /control_manager/trajectory_reference
+    uav2: /control_manager/trajectory_reference
+    #uav3: /control_manager/trajectory_reference

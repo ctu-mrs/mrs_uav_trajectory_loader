@@ -1,17 +1,21 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>mrs_uav_trajectory_loader</name>
+  <name>mrs_multi_uav_trajectory_loader</name>
   <version>0.0.1</version>
-  <description>Minimal ROS2 trajectory loader as a component.</description>
-  <maintainer email="afzal.ahmad@fel.cvut.cz">Afzal Ahmad</maintainer>
+  <description>Minimal ROS2 multi-uav trajectory loader.</description>
+  <maintainer email="vinkltob@fel.cvut.cz">Tobias Vinklarek</maintainer>
   <license>Apache-2.0</license>
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>rclcpp</depend>
-  <depend>rclcpp_components</depend>
+
+  <depend>rclpy</depend>
+  <depend>ament_cmake</depend>
+  <depend>ament_cmake_python</depend>
   <depend>mrs_msgs</depend>
   <depend>std_srvs</depend>
   <depend>mrs_lib</depend>
+
+  <exec_depend>python3-numpy</exec_depend>
+
   <export>
-    <build_type>ament_cmake</build_type>
+    <build_type>ament_python</build_type>
   </export>
 </package>
