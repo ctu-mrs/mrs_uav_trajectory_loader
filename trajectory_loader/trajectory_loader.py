@@ -101,8 +101,9 @@ class TrajectoryLoader(Node):
                 else:
                     self._logger.info(f"{full_key}: {value}")
 
-        # Read global config
 
+
+        # Read global config
         with open(self.config_path, 'r') as f:
             data = yaml.safe_load(f)
             log_config(data)
@@ -145,7 +146,7 @@ class TrajectoryLoader(Node):
                 timestamps = data[:,0]
                 dt = np.mean(np.diff(timestamps))
                 if not np.isclose(dt,self.dt,atol=1e-2):
-                    raise SamplingError(f"Trajectory {uavs[uav]['filename']} are sampled at {dt}, but condig requires {self.dt}")
+                    raise SamplingError(f"Trajectory {uavs[uav]['filename']} are sampled at {dt}, but config requires {self.dt}")
                 trajectory = data[:,1:]
 
             else:
@@ -156,7 +157,7 @@ class TrajectoryLoader(Node):
                     timestamps = data[:,header.index('t')]
                     dt = np.mean(np.diff(timestamps))
                     if np.isclose(dt,self.dt,atol=1e-2):
-                        raise SamplingError(f"Trajectory {uavs[uav]['filename']} are sampled at {dt}, but condig requires {self.dt}")
+                        raise SamplingError(f"Trajectory {uavs[uav]['filename']} are sampled at {dt}, but config requires {self.dt}")
                 else:
                     timestamps = np.arange(n_points) * self.dt
                 
@@ -173,8 +174,22 @@ class TrajectoryLoader(Node):
 
                 trajectory = np.vstack([x,y,z,heading]).T
 
+            if loop:
+                # check whether trajectory can wrap around
+                # should be identical to the mpc_tracker check
+                first_pos = trajectory[0,:3]
+                first_hdg = trajectory[0,3]
+                last_pos = trajectory[-1,:3]
+                last_hdg = trajectory[-1,3]
+                if np.linalg.norm(first_pos-last_pos) >= 1.0 or \
+                   np.abs(np.arctan2(np.sin(first_hdg - last_hdg), np.cos(first_hdg - last_hdg))) >= 0.2:
+                    raise TrajectoryLoadingError(f'Can not loop the trajectory for {uav}. First and last points are too far apart.')
+
             trajectory += self.global_offset
             trajectory += local_offset
+
+
+
 
             uav_configs.append(UAVTrajectory(uav_name=uav_name,
                                          trajectory_file_path=trajectory_file_path,
