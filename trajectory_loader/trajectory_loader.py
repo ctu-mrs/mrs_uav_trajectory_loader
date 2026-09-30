@@ -113,6 +113,8 @@ class TrajectoryLoader(Node):
             self.dt             = category['dt']
             self.global_offset  = category['global_offset']
             self.safety_margin  = category['safety_margin']
+            feasibility_check   = category['feasibility_check']
+            maximum_speed  = category['maximum_speed']
             self.lookahead_time = category['lookahead_time']
             uavs                = category['uavs']
 
@@ -184,6 +186,12 @@ class TrajectoryLoader(Node):
                 if np.linalg.norm(first_pos-last_pos) >= 1.0 or \
                    np.abs(np.arctan2(np.sin(first_hdg - last_hdg), np.cos(first_hdg - last_hdg))) >= 0.2:
                     raise TrajectoryLoadingError(f'Can not loop the trajectory for {uav}. First and last points are too far apart.')
+
+            if feasibility_check:
+                dists = np.linalg.norm(np.diff(trajectory[:, :3], axis=0),axis=1)
+                if any(dists / self.dt > maximum_speed):
+                    raise TrajectoryLoadingError(f'Trajectory points for {uav} are spaced too far apart, thus exceeding maximum speed of {maximum_speed}.\
+                                                 Perhaps you are trying to load waypoints instead of trajectory?')
 
             trajectory += self.global_offset
             trajectory += local_offset

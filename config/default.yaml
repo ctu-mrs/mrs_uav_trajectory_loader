@@ -25,6 +25,12 @@ trajectory:
   # Note: Keep the value >= 2.0, unless you know what you are doing
   safety_margin: 2.0
 
+  # Whether to check that the trajectory satisfies maximum speed between two trajectory points
+  # Used to check that the user does not pass waypoints as a trajectory, or that trajectory is not incorrectly sampled in time
+  # Note: 8.0 m/s is maximum horizontal speed of the 'fast' constrain
+  feasibility_check: true
+  maximum_speed: 8.0 #[m/s]
+
   # Limits how far into the the future (in seconds) we check for collisions
   # Default value is 3600.0 seconds (1 hour) assuming UAVs is then more likely to run outout of
   # battery than collide with another UAV
