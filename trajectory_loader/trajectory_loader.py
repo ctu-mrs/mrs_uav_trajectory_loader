@@ -25,7 +25,7 @@ class HeaderError(Exception):
 class SamplingError(Exception):
     pass
 
-class TrajectoryCollissionError(Exception):
+class TrajectoryCollisionError(Exception):
     pass
 
 class TrajectoryLoadingError(Exception):
@@ -69,12 +69,12 @@ class TrajectoryLoader(Node):
         self._logger.info("Config parsed")
 
         try:
-            self.collission_check()
+            self.collision_check()
         except Exception as e:
             self._logger.error('Mutual trajectory collision check has failed')
             self._logger.error(f'{e}')
             return
-        self._logger.info("Collission check passed")
+        self._logger.info("Collision check passed")
 
         try:
             self.start_services()
@@ -202,7 +202,7 @@ class TrajectoryLoader(Node):
         return uav_configs
 
 
-    def collission_check(self):
+    def collision_check(self):
         total_points = int(self.lookahead_time / self.dt+1) # how many trajectory points we have in one hour
 
         trajectories = np.zeros((len(self.uav_configs),total_points,3))
@@ -243,7 +243,7 @@ class TrajectoryLoader(Node):
             exception_str = "The following collisions were detected:"
             for col in collisions:
                 exception_str += f"\nTrajectories of {uav_names[int(col[1])]} and {uav_names[int(col[2])]} collide at {np.round(col[0],2)} seconds"
-            raise TrajectoryCollissionError(
+            raise TrajectoryCollisionError(
                 exception_str
             )
         return

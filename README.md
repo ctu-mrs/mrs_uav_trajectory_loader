@@ -40,7 +40,7 @@ trajectory:
   # Note: Keep the value >= 2.0, unless you know what you are doing
   safety_margin: 2.0
 
-  # Limits how far into the the future (in seconds) we check for collissions
+  # Limits how far into the the future (in seconds) we check for collisions
   # Default value is 3600.0 seconds (1 hour) assuming UAVs is then more likely to run outout of
   # battery than collide with another UAV
   lookahead_time: 3600.0
@@ -132,11 +132,11 @@ ros2 service call /$UAV_NAME/control_manager/stop_trajectory_tracking
 ```
 
 
-## How does the collission check work
+## How does the collision check work
 What is assumed (and enforced):
 - Trajectories are sampled at identical times
 - By default, UAV should not last in the air longer than one hour (hence the `lookahead_time` param value)
-- A collission is detected, when distance (L2 norm) between two points at time `t` of two or more trajectories
+- A collision is detected, when distance (L2 norm) between two points at time `t` of two or more trajectories
 is less or equal to `safety_margin` param
 - If trajectory loops (and passes loop check), it simple repeated until `lookahead_time`
 - If trajectory does not loop, then we consider that the UAV remains at final waypoint position until `lookahead_time`
